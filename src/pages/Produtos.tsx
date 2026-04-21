@@ -52,7 +52,7 @@ export default function Produtos() {
       // 3. Busca produtos
       let query = supabase
         .from("produtos")
-        .select("id, nome, slug, preco, estoque, imagem_url, descricao, ordem, created_at")
+        .select("id, nome, slug, preco, estoque, imagem_url, descricao, ordem, created_at, cores")
         .eq("ativo", true);
       if (produtoIds) query = query.in("id", produtoIds);
       const { data } = await query;
