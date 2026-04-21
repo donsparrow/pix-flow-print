@@ -115,7 +115,7 @@ export default function AdminProdutos() {
       .split(",")
       .map((c: string) => c.trim())
       .filter(Boolean);
-    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
+    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), lucro: Number(edit.lucro || 0), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
     delete payload.produto_categorias;
     delete payload.imagem_upload;
