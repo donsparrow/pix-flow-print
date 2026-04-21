@@ -5,12 +5,14 @@ import { useParams, Link } from "react-router-dom";
 import { brl } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
-import { Minus, Plus, ShoppingBag, ArrowLeft, Package, Ruler, Weight } from "lucide-react";
+import { Minus, Plus, ShoppingBag, ArrowLeft, Ruler, Weight, Check } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Produto() {
   const { slug } = useParams();
   const [p, setP] = useState<any>(null);
   const [qty, setQty] = useState(1);
+  const [cor, setCor] = useState<string | null>(null);
   const { add } = useCart();
 
   useEffect(() => {
@@ -21,12 +23,36 @@ export default function Produto() {
       .eq("slug", slug)
       .eq("ativo", true)
       .maybeSingle()
-      .then(({ data }) => setP(data));
+      .then(({ data }) => {
+        setP(data);
+        setCor(null);
+      });
   }, [slug]);
 
   if (!p) return <Layout><div className="container py-20 text-center text-muted-foreground">Carregando...</div></Layout>;
 
   const esgotado = p.estoque <= 0;
+  const cores: string[] = Array.isArray(p.cores) ? p.cores.filter(Boolean) : [];
+  const temCores = cores.length > 0;
+
+  const adicionar = () => {
+    if (temCores && !cor) {
+      toast.error("Selecione uma cor antes de continuar");
+      return;
+    }
+    add(
+      {
+        produto_id: p.id,
+        nome: p.nome,
+        preco: p.preco,
+        imagem_url: p.imagem_url,
+        estoque: p.estoque,
+        cor_selecionada: temCores ? cor : null,
+        cores_disponiveis: temCores ? cores : null,
+      },
+      qty
+    );
+  };
 
   return (
     <Layout>
@@ -60,6 +86,30 @@ export default function Produto() {
               )}
             </div>
 
+            {temCores && (
+              <div className="space-y-2">
+                <div className="text-sm font-bold">
+                  Cor: {cor ? <span className="text-primary">{cor}</span> : <span className="text-muted-foreground font-normal">selecione uma opção</span>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {cores.map((c) => {
+                    const sel = c === cor;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCor(c)}
+                        className={`px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all flex items-center gap-2 ${sel ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/40"}`}
+                      >
+                        {sel && <Check className="h-3.5 w-3.5" />}
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {esgotado ? (
               <div className="bg-destructive/10 text-destructive font-bold rounded-xl p-4 text-center">
                 ESGOTADO — entre em contato pelo WhatsApp para encomendar.
@@ -77,11 +127,12 @@ export default function Produto() {
                 </div>
                 <Button
                   size="lg"
-                  onClick={() => add({ produto_id: p.id, nome: p.nome, preco: p.preco, imagem_url: p.imagem_url, estoque: p.estoque }, qty)}
-                  className="w-full bg-gradient-warm text-white font-bold rounded-full shadow-pop hover:translate-y-0.5 hover:shadow-md transition-all h-14 text-base"
+                  onClick={adicionar}
+                  disabled={temCores && !cor}
+                  className="w-full bg-gradient-warm text-white font-bold rounded-full shadow-pop hover:translate-y-0.5 hover:shadow-md transition-all h-14 text-base disabled:opacity-50"
                 >
                   <ShoppingBag className="mr-2 h-5 w-5" />
-                  Adicionar ao carrinho — {brl(p.preco * qty)}
+                  {temCores && !cor ? "Selecione uma cor" : `Adicionar ao carrinho — ${brl(p.preco * qty)}`}
                 </Button>
               </div>
             )}

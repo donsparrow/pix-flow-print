@@ -52,7 +52,7 @@ export default function PedidoDetalhe() {
     `*Código:* ${pedido.codigo}\n` +
     `*Cliente:* ${pedido.cliente_nome}\n` +
     `*Total:* ${brl(Number(pedido.valor_total))}\n\n` +
-    `*Itens:*\n${itens.map((i) => `• ${i.quantidade}× ${i.produto_nome}`).join("\n")}\n\n` +
+    `*Itens:*\n${itens.map((i) => `• ${i.quantidade}× ${i.produto_nome}${i.cor_selecionada ? ` (Cor: ${i.cor_selecionada})` : ""}`).join("\n")}\n\n` +
     `Aguardo confirmação 😊`
   );
 
@@ -193,6 +193,7 @@ export default function PedidoDetalhe() {
                   {i.produto_imagem && <img src={i.produto_imagem} alt="" className="w-12 h-12 rounded-lg object-cover" />}
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold line-clamp-1">{i.produto_nome}</div>
+                    {i.cor_selecionada && <div className="text-xs text-muted-foreground">Cor: <span className="font-semibold text-foreground">{i.cor_selecionada}</span></div>}
                     <div className="text-xs text-muted-foreground">{i.quantidade} × {brl(Number(i.preco_unitario))}</div>
                   </div>
                   <div className="font-bold">{brl(Number(i.subtotal))}</div>

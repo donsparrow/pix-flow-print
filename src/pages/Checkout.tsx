@@ -64,9 +64,14 @@ export default function Checkout() {
     }
 
     setSubmitting(true);
+    const faltaCor = items.find((i) => i.cores_disponiveis && i.cores_disponiveis.length > 0 && !i.cor_selecionada);
+    if (faltaCor) {
+      toast.error(`Selecione a cor para ${faltaCor.nome}`);
+      return;
+    }
     const { data, error } = await supabase.rpc("criar_pedido", {
       _cliente: form,
-      _itens: items.map((i) => ({ produto_id: i.produto_id, quantidade: i.quantidade })) as any,
+      _itens: items.map((i) => ({ produto_id: i.produto_id, quantidade: i.quantidade, cor_selecionada: i.cor_selecionada || null })) as any,
       _metodo_frete: metodo,
       _valor_frete: valorFrete,
       _observacoes: form.observacoes || null,
@@ -170,10 +175,11 @@ export default function Checkout() {
               <h3 className="font-display font-bold text-xl">Resumo</h3>
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {items.map((i) => (
-                  <div key={i.produto_id} className="flex gap-3 text-sm">
+                  <div key={`${i.produto_id}-${i.cor_selecionada || ""}`} className="flex gap-3 text-sm">
                     {i.imagem_url && <img src={i.imagem_url} alt={i.nome} className="w-12 h-12 rounded-lg object-cover" />}
                     <div className="flex-1 min-w-0">
                       <div className="line-clamp-1 font-semibold">{i.nome}</div>
+                      {i.cor_selecionada && <div className="text-xs text-muted-foreground">Cor: <span className="font-semibold text-foreground">{i.cor_selecionada}</span></div>}
                       <div className="text-muted-foreground text-xs">{i.quantidade} × {brl(i.preco)}</div>
                     </div>
                     <div className="font-bold">{brl(i.preco * i.quantidade)}</div>

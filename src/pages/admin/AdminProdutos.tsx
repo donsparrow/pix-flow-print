@@ -49,11 +49,11 @@ export default function AdminProdutos() {
     supabase.from("categorias").select("id, nome").then(({ data }) => setCats(data || []));
   }, []);
 
-  const novo = () => { setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_id: null, ativo: true, destaque: false }); setOpen(true); };
+  const novo = () => { setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_id: null, ativo: true, destaque: false, cores_texto: "" }); setOpen(true); };
   const abrir = (p: any) => {
-    // Heurística: se a URL aponta para o nosso bucket, tratamos como upload; caso contrário, link externo.
     const isUpload = !!p.imagem_url && p.imagem_url.includes("/storage/v1/object/public/produtos/");
-    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || "") });
+    const cores_texto = Array.isArray(p.cores) ? p.cores.join(", ") : "";
+    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto });
     setOpen(true);
   };
 
@@ -75,12 +75,16 @@ export default function AdminProdutos() {
 
   const salvar = async () => {
     if (!edit.nome) return toast.error("Nome obrigatório");
-    // Upload tem prioridade sobre URL manual
     const imagem_url = edit.imagem_upload || edit.imagem_link || null;
-    const payload: any = { ...edit, imagem_url, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
+    const cores = (edit.cores_texto || "")
+      .split(",")
+      .map((c: string) => c.trim())
+      .filter(Boolean);
+    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
     delete payload.imagem_upload;
     delete payload.imagem_link;
+    delete payload.cores_texto;
     const { error } = edit.id
       ? await supabase.from("produtos").update(payload).eq("id", edit.id)
       : await supabase.from("produtos").insert(payload);
@@ -206,6 +210,21 @@ export default function AdminProdutos() {
                     {edit.imagem_link && !edit.imagem_upload && <img src={edit.imagem_link} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview da URL" />}
                   </div>
                 </div>
+              </Field>
+              <Field label="Cores disponíveis (opcional)">
+                <Input
+                  value={edit.cores_texto || ""}
+                  onChange={(e) => setEdit({ ...edit, cores_texto: e.target.value })}
+                  placeholder="ex: Azul, Preto, Branco"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Separe por vírgula. Se preenchido, o cliente será obrigado a escolher uma cor antes de finalizar o pedido. Estoque continua geral.</p>
+                {(edit.cores_texto || "").split(",").map((c: string) => c.trim()).filter(Boolean).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(edit.cores_texto || "").split(",").map((c: string) => c.trim()).filter(Boolean).map((c: string, idx: number) => (
+                      <span key={idx} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-semibold border border-primary/20">{c}</span>
+                    ))}
+                  </div>
+                )}
               </Field>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2"><Switch checked={edit.ativo} onCheckedChange={(v) => setEdit({ ...edit, ativo: v })} />Ativo</label>
