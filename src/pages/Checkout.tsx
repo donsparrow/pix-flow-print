@@ -93,6 +93,26 @@ export default function Checkout() {
     nav(`/pedido/${result.codigo}`, { state: { acabou_de_criar: true } });
   };
 
+  const aplicarCupom = async () => {
+    const codigo = cupomInput.trim().toUpperCase();
+    if (!codigo) return toast.error("Digite um código");
+    setValidandoCupom(true);
+    const { data, error } = await (supabase as any).rpc("validar_cupom", {
+      _codigo: codigo,
+      _subtotal: total,
+    });
+    setValidandoCupom(false);
+    if (error) return toast.error(error.message);
+    const r = Array.isArray(data) ? data[0] : data;
+    if (!r?.valido) return toast.error(r?.mensagem || "Cupom inválido");
+    setCupomAplicado({ codigo: r.codigo, desconto: Number(r.desconto) });
+    toast.success(`Cupom ${r.codigo} aplicado!`);
+  };
+
+  const removerCupom = () => {
+    setCupomAplicado(null);
+    setCupomInput("");
+  };
   if (items.length === 0) {
     return (
       <Layout>
@@ -192,8 +212,36 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
-              <div className="border-t pt-3 space-y-2 text-sm">
+              <div className="border-t pt-3 space-y-3 text-sm">
+                {/* Cupom */}
+                {cupomAplicado ? (
+                  <div className="flex items-center justify-between gap-2 bg-success/10 border border-success/30 rounded-lg p-2">
+                    <div className="flex items-center gap-2 text-success font-bold text-xs">
+                      <Ticket className="h-4 w-4" />
+                      <span className="font-mono">{cupomAplicado.codigo}</span>
+                      <span className="text-foreground">−{brl(cupomAplicado.desconto)}</span>
+                    </div>
+                    <button onClick={removerCupom} className="text-muted-foreground hover:text-destructive">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={cupomInput}
+                      onChange={(e) => setCupomInput(e.target.value.toUpperCase())}
+                      placeholder="Cupom de desconto"
+                      className="font-mono uppercase"
+                      maxLength={30}
+                      onKeyDown={(e) => e.key === "Enter" && aplicarCupom()}
+                    />
+                    <Button type="button" variant="outline" onClick={aplicarCupom} disabled={validandoCupom}>
+                      {validandoCupom ? "..." : "Aplicar"}
+                    </Button>
+                  </div>
+                )}
                 <Row label="Subtotal" value={brl(total)} />
+                {cupomAplicado && <Row label="Desconto" value={`− ${brl(cupomAplicado.desconto)}`} />}
                 <Row label="Frete" value={brl(valorFrete)} />
                 <div className="flex justify-between font-display font-bold text-xl pt-2 border-t">
                   <span>Total</span>
