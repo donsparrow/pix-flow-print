@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { brl } from "@/lib/format";
 import { Plus, Pencil, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
@@ -36,24 +36,29 @@ export default function AdminProdutos() {
   const [edit, setEdit] = useState<any>(null);
   const [open, setOpen] = useState(false);
 
-  const carregar = () =>
-    supabase
+  const carregar = async () => {
+    const { data } = await supabase
       .from("produtos")
-      .select("*, categorias(nome)")
+      .select("*, produto_categorias(categoria_id, categorias(id, nome, slug))")
       .order("ordem", { ascending: true })
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setList(data || []));
+      .order("created_at", { ascending: false });
+    setList(data || []);
+  };
 
   useEffect(() => {
     carregar();
-    supabase.from("categorias").select("id, nome").then(({ data }) => setCats(data || []));
+    supabase.from("categorias").select("id, nome, slug").order("nome").then(({ data }) => setCats(data || []));
   }, []);
 
-  const novo = () => { setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_id: null, ativo: true, destaque: false, cores_texto: "" }); setOpen(true); };
+  const novo = () => {
+    setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
+    setOpen(true);
+  };
   const abrir = (p: any) => {
     const isUpload = !!p.imagem_url && p.imagem_url.includes("/storage/v1/object/public/produtos/");
     const cores_texto = Array.isArray(p.cores) ? p.cores.join(", ") : "";
-    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto });
+    const categoria_ids = (p.produto_categorias || []).map((pc: any) => pc.categoria_id);
+    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto, categoria_ids });
     setOpen(true);
   };
 
@@ -73,8 +78,28 @@ export default function AdminProdutos() {
   const removerUpload = () => setEdit({ ...edit, imagem_upload: "" });
   const removerLink = () => setEdit({ ...edit, imagem_link: "" });
 
+  const sincronizarCategorias = async (produtoId: string, categoriaIds: string[]) => {
+    // Garante "Todos" sempre presente
+    const todos = cats.find((c) => c.slug === "todos");
+    const finalIds = Array.from(new Set([...(categoriaIds || []), ...(todos ? [todos.id] : [])]));
+
+    // Remove vínculos atuais e recria
+    await supabase.from("produto_categorias").delete().eq("produto_id", produtoId);
+    if (finalIds.length > 0) {
+      await supabase.from("produto_categorias").insert(
+        finalIds.map((cid) => ({ produto_id: produtoId, categoria_id: cid }))
+      );
+    }
+  };
+
   const salvar = async () => {
     if (!edit.nome) return toast.error("Nome obrigatório");
+    const todos = cats.find((c) => c.slug === "todos");
+    const userSelecionou = (edit.categoria_ids || []).filter((id: string) => id !== todos?.id);
+    if (cats.length > 1 && userSelecionou.length === 0) {
+      return toast.error("Selecione ao menos uma categoria além de 'Todos'");
+    }
+
     const imagem_url = edit.imagem_upload || edit.imagem_link || null;
     const cores = (edit.cores_texto || "")
       .split(",")
@@ -82,13 +107,24 @@ export default function AdminProdutos() {
       .filter(Boolean);
     const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
+    delete payload.produto_categorias;
     delete payload.imagem_upload;
     delete payload.imagem_link;
     delete payload.cores_texto;
-    const { error } = edit.id
-      ? await supabase.from("produtos").update(payload).eq("id", edit.id)
-      : await supabase.from("produtos").insert(payload);
-    if (error) return toast.error(error.message);
+    delete payload.categoria_ids;
+    delete payload.categoria_id; // legacy: ignorado
+
+    let produtoId = edit.id;
+    if (produtoId) {
+      const { error } = await supabase.from("produtos").update(payload).eq("id", produtoId);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data, error } = await supabase.from("produtos").insert(payload).select("id").single();
+      if (error) return toast.error(error.message);
+      produtoId = data.id;
+    }
+
+    await sincronizarCategorias(produtoId, edit.categoria_ids || []);
     toast.success("Salvo");
     setOpen(false); carregar();
   };
@@ -175,15 +211,34 @@ export default function AdminProdutos() {
                 <Field label="Peso (g)"><Input type="number" value={edit.peso_g} onChange={(e) => setEdit({ ...edit, peso_g: e.target.value })} /></Field>
                 <Field label="Estoque"><Input type="number" value={edit.estoque} onChange={(e) => setEdit({ ...edit, estoque: e.target.value })} /></Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Dimensões"><Input value={edit.dimensoes || ""} onChange={(e) => setEdit({ ...edit, dimensoes: e.target.value })} placeholder="ex: 10x10x15cm" /></Field>
-                <Field label="Categoria">
-                  <Select value={edit.categoria_id || ""} onValueChange={(v) => setEdit({ ...edit, categoria_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                  </Select>
-                </Field>
-              </div>
+              <Field label="Dimensões">
+                <Input value={edit.dimensoes || ""} onChange={(e) => setEdit({ ...edit, dimensoes: e.target.value })} placeholder="ex: 10x10x15cm" />
+              </Field>
+              <Field label="Categorias (selecione uma ou mais)">
+                <div className="border rounded-xl p-3 bg-muted/30 space-y-2 max-h-48 overflow-y-auto">
+                  {cats.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma categoria cadastrada.</div>}
+                  {cats.map((c) => {
+                    const isTodos = c.slug === "todos";
+                    const checked = isTodos || (edit.categoria_ids || []).includes(c.id);
+                    return (
+                      <label key={c.id} className={`flex items-center gap-2 cursor-pointer ${isTodos ? "opacity-70" : ""}`}>
+                        <Checkbox
+                          checked={checked}
+                          disabled={isTodos}
+                          onCheckedChange={(v) => {
+                            const cur = new Set<string>(edit.categoria_ids || []);
+                            if (v) cur.add(c.id); else cur.delete(c.id);
+                            setEdit({ ...edit, categoria_ids: Array.from(cur) });
+                          }}
+                        />
+                        <span className="text-sm font-semibold">{c.nome}</span>
+                        {isTodos && <span className="text-[10px] uppercase font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">auto</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">A categoria <strong>Todos</strong> é aplicada automaticamente a todos os produtos.</p>
+              </Field>
               <Field label="Imagem do produto">
                 <div className="space-y-3 border rounded-xl p-3 bg-muted/30">
                   <div className="space-y-2">

@@ -67,11 +67,21 @@ export default function Produto() {
           </div>
 
           <div className="space-y-5">
-            {p.categorias && (
-              <Link to={`/produtos?categoria=${p.categorias.slug}`} className="text-sm font-bold text-secondary uppercase tracking-wider">
-                {p.categorias.nome}
-              </Link>
-            )}
+            {(() => {
+              const tags = (p.produto_categorias || [])
+                .map((pc: any) => pc.categorias)
+                .filter((c: any) => c && c.slug !== "todos");
+              if (tags.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((c: any) => (
+                    <Link key={c.slug} to={`/produtos?categoria=${c.slug}`} className="text-xs font-bold text-secondary uppercase tracking-wider px-2 py-1 rounded-full bg-secondary/10 hover:bg-secondary/20 transition-colors">
+                      {c.nome}
+                    </Link>
+                  ))}
+                </div>
+              );
+            })()}
             <h1 className="font-display text-4xl md:text-5xl font-bold leading-tight">{p.nome}</h1>
             <div className="font-display text-4xl font-bold text-primary">{brl(p.preco)}</div>
 
