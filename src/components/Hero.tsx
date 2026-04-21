@@ -68,15 +68,30 @@ export function Hero() {
 
         <div className="relative animate-scale-in">
           <div className="relative aspect-[4/5] md:aspect-square rounded-3xl overflow-hidden shadow-lg bg-card border-4 border-card">
-            {videoUrl ? (
-              <video
-                src={videoUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
+            {videoSrc ? (
+              ytId ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&playsinline=1&rel=0`}
+                  className="w-full h-full" allow="autoplay; encrypted-media" title="Vídeo"
+                  loading="lazy"
+                />
+              ) : vimeoId ? (
+                <iframe
+                  src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&muted=1&background=1`}
+                  className="w-full h-full" allow="autoplay" title="Vídeo"
+                  loading="lazy"
+                />
+              ) : (
+                <video
+                  src={videoSrc}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                />
+              )
             ) : (
               <div className="w-full h-full bg-gradient-cool flex flex-col items-center justify-center gap-6 p-8">
                 <img src={logo} alt="JRTL 3D" className="w-2/3 max-w-xs animate-float drop-shadow-2xl" />
