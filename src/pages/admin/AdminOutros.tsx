@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
+import { HeroVideoEditor } from "@/components/admin/HeroVideoEditor";
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -99,12 +100,19 @@ export function AdminConfiguracoes() {
     toast.success("Salvo");
   };
 
+  // Vídeo da home tem editor dedicado
+  const HIDDEN = ["hero_video_url", "hero_video_upload"];
+  const visiveis = list.filter((c) => !HIDDEN.includes(c.chave));
+
   return (
     <div className="space-y-6 max-w-3xl">
       <h1 className="font-display text-3xl font-bold">Configurações</h1>
       <p className="text-sm text-muted-foreground">Chave PIX, WhatsApp, fretes, vídeo da home, Instagram, etc.</p>
+
+      <HeroVideoEditor />
+
       <div className="space-y-3">
-        {list.map((c) => (
+        {visiveis.map((c) => (
           <div key={c.chave} className="bg-card border rounded-xl p-4 space-y-2">
             <Label className="text-xs font-bold uppercase">{c.descricao || c.chave}</Label>
             <div className="flex gap-2">
