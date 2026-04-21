@@ -56,6 +56,13 @@ export default function PedidoDetalhe() {
     `Aguardo confirmação 😊`
   );
 
+  const mensagemJaPaguei = encodeURIComponent(
+    `Olá! Já efetuei o pagamento do pedido *${pedido.codigo}* 💸\n\n` +
+    `*Cliente:* ${pedido.cliente_nome}\n` +
+    `*Valor:* ${brl(Number(pedido.valor_total))}\n\n` +
+    `Vou enviar o comprovante em seguida. Obrigado!`
+  );
+
   const uploadComprovante = async (file: File) => {
     if (!file) return;
     setUploading(true);
