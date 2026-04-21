@@ -211,15 +211,34 @@ export default function AdminProdutos() {
                 <Field label="Peso (g)"><Input type="number" value={edit.peso_g} onChange={(e) => setEdit({ ...edit, peso_g: e.target.value })} /></Field>
                 <Field label="Estoque"><Input type="number" value={edit.estoque} onChange={(e) => setEdit({ ...edit, estoque: e.target.value })} /></Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Dimensões"><Input value={edit.dimensoes || ""} onChange={(e) => setEdit({ ...edit, dimensoes: e.target.value })} placeholder="ex: 10x10x15cm" /></Field>
-                <Field label="Categoria">
-                  <Select value={edit.categoria_id || ""} onValueChange={(v) => setEdit({ ...edit, categoria_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                  </Select>
-                </Field>
-              </div>
+              <Field label="Dimensões">
+                <Input value={edit.dimensoes || ""} onChange={(e) => setEdit({ ...edit, dimensoes: e.target.value })} placeholder="ex: 10x10x15cm" />
+              </Field>
+              <Field label="Categorias (selecione uma ou mais)">
+                <div className="border rounded-xl p-3 bg-muted/30 space-y-2 max-h-48 overflow-y-auto">
+                  {cats.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma categoria cadastrada.</div>}
+                  {cats.map((c) => {
+                    const isTodos = c.slug === "todos";
+                    const checked = isTodos || (edit.categoria_ids || []).includes(c.id);
+                    return (
+                      <label key={c.id} className={`flex items-center gap-2 cursor-pointer ${isTodos ? "opacity-70" : ""}`}>
+                        <Checkbox
+                          checked={checked}
+                          disabled={isTodos}
+                          onCheckedChange={(v) => {
+                            const cur = new Set<string>(edit.categoria_ids || []);
+                            if (v) cur.add(c.id); else cur.delete(c.id);
+                            setEdit({ ...edit, categoria_ids: Array.from(cur) });
+                          }}
+                        />
+                        <span className="text-sm font-semibold">{c.nome}</span>
+                        {isTodos && <span className="text-[10px] uppercase font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">auto</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">A categoria <strong>Todos</strong> é aplicada automaticamente a todos os produtos.</p>
+              </Field>
               <Field label="Imagem do produto">
                 <div className="space-y-3 border rounded-xl p-3 bg-muted/30">
                   <div className="space-y-2">
