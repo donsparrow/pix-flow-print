@@ -4,9 +4,20 @@ import { brl, statusLabels, statusColors } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Eye, Image as ImageIcon } from "lucide-react";
+import { Eye, Image as ImageIcon, Ban, RotateCcw } from "lucide-react";
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -28,7 +39,7 @@ export default function AdminPedidos() {
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("pedidos").update({ status: status as any }).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Status atualizado");
+    toast.success(status === "cancelado" ? "Pedido cancelado" : status === "analise_pagamento" ? "Pedido reativado" : "Status atualizado");
     carregar();
     if (sel?.id === id) setSel({ ...sel, status });
   };
