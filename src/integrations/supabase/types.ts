@@ -141,6 +141,7 @@ export type Database = {
       }
       itens_pedido: {
         Row: {
+          cor_selecionada: string | null
           created_at: string
           id: string
           pedido_id: string
@@ -152,6 +153,7 @@ export type Database = {
           subtotal: number
         }
         Insert: {
+          cor_selecionada?: string | null
           created_at?: string
           id?: string
           pedido_id: string
@@ -163,6 +165,7 @@ export type Database = {
           subtotal: number
         }
         Update: {
+          cor_selecionada?: string | null
           created_at?: string
           id?: string
           pedido_id?: string
@@ -263,6 +266,7 @@ export type Database = {
         Row: {
           ativo: boolean
           categoria_id: string | null
+          cores: string[] | null
           created_at: string
           descricao: string | null
           destaque: boolean
@@ -281,6 +285,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           categoria_id?: string | null
+          cores?: string[] | null
           created_at?: string
           descricao?: string | null
           destaque?: boolean
@@ -299,6 +304,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           categoria_id?: string | null
+          cores?: string[] | null
           created_at?: string
           descricao?: string | null
           destaque?: boolean
