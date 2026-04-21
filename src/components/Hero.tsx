@@ -94,7 +94,7 @@ export function Hero() {
               )
             ) : (
               <div className="w-full h-full bg-gradient-cool flex flex-col items-center justify-center gap-6 p-8">
-                <img src={logo} alt="JRTL 3D" className="w-2/3 max-w-xs animate-float drop-shadow-2xl" />
+                <img src={logo} alt="JRTL STUDIO" className="w-2/3 max-w-xs animate-float drop-shadow-2xl" />
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/90 backdrop-blur text-sm font-bold">
                   <Play className="h-4 w-4 fill-primary text-primary" />
                   Configure seu vídeo no admin
