@@ -15,6 +15,7 @@ export type Produto = {
   imagem_url: string | null;
   descricao?: string | null;
   cores?: string[] | null;
+  imagens_extras?: string[] | null;
 };
 
 export function ProductCard({ p }: { p: Produto }) {
