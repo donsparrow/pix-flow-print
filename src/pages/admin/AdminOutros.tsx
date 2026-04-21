@@ -12,19 +12,83 @@ import { InstagramEmbedEditor } from "@/components/admin/InstagramEmbedEditor";
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+type CategoriaForm = { nome: string; slug: string; emoji: string; imagem_url: string };
+
+function CategoriaImagemPreview({ imagem_url, emoji, nome }: { imagem_url?: string | null; emoji?: string | null; nome: string }) {
+  if (imagem_url) {
+    return <img src={imagem_url} alt={nome} className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0" />;
+  }
+  return <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-2xl shrink-0">{emoji || "📦"}</div>;
+}
+
+function ImagemUploadCampo({
+  value,
+  onChange,
+  disabled,
+}: { value: string; onChange: (url: string) => void; disabled?: boolean }) {
+  const [enviando, setEnviando] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const upload = async (file: File) => {
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+      return toast.error("Use JPG, PNG ou WEBP");
+    }
+    if (file.size > 5 * 1024 * 1024) return toast.error("Imagem muito grande (máx 5MB)");
+    setEnviando(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("categorias").upload(path, file, { cacheControl: "3600", upsert: false });
+    if (error) {
+      setEnviando(false);
+      return toast.error(error.message);
+    }
+    const { data } = supabase.storage.from("categorias").getPublicUrl(path);
+    onChange(data.publicUrl);
+    setEnviando(false);
+    toast.success("Imagem enviada");
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      {value ? (
+        <img src={value} alt="" className="w-16 h-16 rounded-lg object-cover bg-muted border" />
+      ) : (
+        <div className="w-16 h-16 rounded-lg bg-muted border border-dashed flex items-center justify-center text-[10px] text-muted-foreground text-center px-1">Sem imagem</div>
+      )}
+      <div className="flex flex-col gap-1">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }}
+          disabled={disabled || enviando}
+        />
+        <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={disabled || enviando}>
+          {enviando ? "Enviando..." : value ? "Trocar" : "Enviar imagem"}
+        </Button>
+        {value && (
+          <Button type="button" size="sm" variant="ghost" className="text-destructive h-7" onClick={() => onChange("")} disabled={disabled || enviando}>
+            Remover
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AdminCategorias() {
   const [list, setList] = useState<any[]>([]);
   const [nome, setNome] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<{ nome: string; slug: string }>({ nome: "", slug: "" });
+  const [editForm, setEditForm] = useState<CategoriaForm>({ nome: "", slug: "", emoji: "", imagem_url: "" });
 
   const carregar = () => supabase.from("categorias").select("*").order("ordem").then(({ data }) => setList(data || []));
   useEffect(() => { carregar(); }, []);
 
   const [adicionando, setAdicionando] = useState(false);
   const add = async () => {
-    // pega valor do state OU diretamente do DOM (fallback robusto)
     const raw = (nome || inputRef.current?.value || "").toString();
     const nomeLimpo = raw.trim();
     if (!nomeLimpo) {
@@ -59,12 +123,20 @@ export function AdminCategorias() {
     carregar();
   };
 
-  const startEdit = (c: any) => { setEditId(c.id); setEditForm({ nome: c.nome, slug: c.slug }); };
+  const startEdit = (c: any) => {
+    setEditId(c.id);
+    setEditForm({ nome: c.nome, slug: c.slug, emoji: c.emoji || "", imagem_url: c.imagem_url || "" });
+  };
   const cancelEdit = () => { setEditId(null); };
   const saveEdit = async (id: string, slugAtual: string) => {
     if (!editForm.nome || !editForm.slug) return toast.error("Nome e slug obrigatórios");
     if (slugAtual === "todos" && editForm.slug !== "todos") return toast.error('A categoria "Todos" não pode ter o slug alterado');
-    const { error } = await supabase.from("categorias").update({ nome: editForm.nome, slug: slugify(editForm.slug) }).eq("id", id);
+    const { error } = await supabase.from("categorias").update({
+      nome: editForm.nome,
+      slug: slugify(editForm.slug),
+      emoji: editForm.emoji.trim() || null,
+      imagem_url: editForm.imagem_url || null,
+    }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Categoria atualizada"); setEditId(null); carregar();
   };
@@ -74,6 +146,7 @@ export function AdminCategorias() {
       <div>
         <h1 className="font-display text-3xl font-bold">Categorias</h1>
         <p className="text-sm text-muted-foreground mt-1">A categoria <strong>Todos</strong> é padrão do sistema — todo produto pertence a ela automaticamente.</p>
+        <p className="text-xs text-muted-foreground mt-1">Personalize cada categoria com uma <strong>imagem</strong> (prioridade), <strong>URL</strong> ou <strong>emoji</strong>.</p>
       </div>
       <form
         className="flex gap-2 items-stretch relative z-10"
@@ -99,32 +172,63 @@ export function AdminCategorias() {
           const isTodos = c.slug === "todos";
           const isEditing = editId === c.id;
           return (
-            <div key={c.id} className="flex items-center gap-3 p-3 bg-card border rounded-xl">
+            <div key={c.id} className="p-3 bg-card border rounded-xl">
               {isEditing ? (
-                <div className="flex-1 grid grid-cols-2 gap-2">
-                  <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} placeholder="Nome" />
-                  <Input value={editForm.slug} onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })} placeholder="Slug" disabled={isTodos} />
-                </div>
-              ) : (
-                <div className="flex-1">
-                  <div className="font-semibold flex items-center gap-2">
-                    {c.nome}
-                    {isTodos && <span className="text-[10px] uppercase font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Lock className="h-3 w-3" />Padrão</span>}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs font-bold">Nome</Label>
+                      <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} placeholder="Nome" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold">Slug</Label>
+                      <Input value={editForm.slug} onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })} placeholder="Slug" disabled={isTodos} />
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground font-mono">{c.slug}</div>
+                  <div>
+                    <Label className="text-xs font-bold">Imagem (upload)</Label>
+                    <div className="mt-1">
+                      <ImagemUploadCampo value={editForm.imagem_url} onChange={(url) => setEditForm({ ...editForm, imagem_url: url })} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold">URL de imagem (alternativa)</Label>
+                    <Input
+                      value={editForm.imagem_url}
+                      onChange={(e) => setEditForm({ ...editForm, imagem_url: e.target.value })}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold">Emoji (fallback)</Label>
+                    <Input
+                      value={editForm.emoji}
+                      onChange={(e) => setEditForm({ ...editForm, emoji: e.target.value })}
+                      placeholder="🦸"
+                      maxLength={4}
+                      className="w-24 text-2xl"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">Usado quando não houver imagem.</p>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <Button size="sm" variant="ghost" onClick={cancelEdit}><X className="h-4 w-4 mr-1" />Cancelar</Button>
+                    <Button size="sm" onClick={() => saveEdit(c.id, c.slug)}><Check className="h-4 w-4 mr-1" />Salvar</Button>
+                  </div>
                 </div>
-              )}
-              {isEditing ? (
-                <>
-                  <Button size="icon" variant="ghost" onClick={() => saveEdit(c.id, c.slug)} className="text-success"><Check className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
-                </>
               ) : (
-                <>
+                <div className="flex items-center gap-3">
+                  <CategoriaImagemPreview imagem_url={c.imagem_url} emoji={c.emoji} nome={c.nome} />
+                  <div className="flex-1">
+                    <div className="font-semibold flex items-center gap-2">
+                      {c.nome}
+                      {isTodos && <span className="text-[10px] uppercase font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Lock className="h-3 w-3" />Padrão</span>}
+                    </div>
+                    <div className="text-xs text-muted-foreground font-mono">{c.slug}</div>
+                  </div>
                   <Switch checked={c.ativo} onCheckedChange={(v) => toggle(c.id, v)} />
                   <Button size="icon" variant="ghost" onClick={() => startEdit(c)}><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => del(c.id, c.slug)} disabled={isTodos} className="text-destructive disabled:text-muted-foreground"><Trash2 className="h-4 w-4" /></Button>
-                </>
+                </div>
               )}
             </div>
           );
