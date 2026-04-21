@@ -21,11 +21,22 @@ export function AdminCategorias() {
   const carregar = () => supabase.from("categorias").select("*").order("ordem").then(({ data }) => setList(data || []));
   useEffect(() => { carregar(); }, []);
 
+  const [adicionando, setAdicionando] = useState(false);
   const add = async () => {
-    if (!nome) return;
-    const { error } = await supabase.from("categorias").insert({ nome, slug: slugify(nome), ordem: list.length + 1 });
+    const nomeLimpo = nome.trim();
+    if (!nomeLimpo) return toast.error("Informe o nome da categoria");
+    const slug = slugify(nomeLimpo);
+    if (!slug) return toast.error("Nome inválido");
+    if (list.some((c) => c.slug === slug || c.nome.toLowerCase() === nomeLimpo.toLowerCase())) {
+      return toast.error("Já existe uma categoria com esse nome");
+    }
+    setAdicionando(true);
+    const { error } = await supabase.from("categorias").insert({ nome: nomeLimpo, slug, ordem: list.length + 1 });
+    setAdicionando(false);
     if (error) return toast.error(error.message);
-    setNome(""); toast.success("Categoria criada"); carregar();
+    setNome("");
+    toast.success("Categoria criada com sucesso");
+    carregar();
   };
 
   const del = async (id: string, slug: string) => {
@@ -58,8 +69,8 @@ export function AdminCategorias() {
         <p className="text-sm text-muted-foreground mt-1">A categoria <strong>Todos</strong> é padrão do sistema — todo produto pertence a ela automaticamente.</p>
       </div>
       <div className="flex gap-2">
-        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da nova categoria" onKeyDown={(e) => e.key === "Enter" && add()} />
-        <Button onClick={add}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da nova categoria" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Button type="button" onClick={add} disabled={adicionando || !nome.trim()}><Plus className="h-4 w-4 mr-1" />{adicionando ? "Adicionando..." : "Adicionar"}</Button>
       </div>
       <div className="space-y-2">
         {list.map((c) => {
