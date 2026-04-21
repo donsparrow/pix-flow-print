@@ -216,11 +216,15 @@ export default function AdminProdutos() {
                 <Field label="Slug"><Input value={edit.slug} onChange={(e) => setEdit({ ...edit, slug: slugify(e.target.value) })} /></Field>
               </div>
               <Field label="Descrição"><Textarea value={edit.descricao || ""} onChange={(e) => setEdit({ ...edit, descricao: e.target.value })} /></Field>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Field label="Preço (R$)"><Input type="number" step="0.01" value={edit.preco} onChange={(e) => setEdit({ ...edit, preco: e.target.value })} /></Field>
+                <Field label="Lucro (R$) — interno">
+                  <Input type="number" step="0.01" value={edit.lucro ?? 0} onChange={(e) => setEdit({ ...edit, lucro: e.target.value })} />
+                </Field>
                 <Field label="Peso (g)"><Input type="number" value={edit.peso_g} onChange={(e) => setEdit({ ...edit, peso_g: e.target.value })} /></Field>
                 <Field label="Estoque"><Input type="number" value={edit.estoque} onChange={(e) => setEdit({ ...edit, estoque: e.target.value })} /></Field>
               </div>
+              <p className="text-xs text-muted-foreground -mt-2">O lucro é apenas para controle interno e não aparece para os clientes.</p>
               <Field label="Dimensões">
                 <Input value={edit.dimensoes || ""} onChange={(e) => setEdit({ ...edit, dimensoes: e.target.value })} placeholder="ex: 10x10x15cm" />
               </Field>
