@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-jrtl.png";
-import { LayoutDashboard, Package, ShoppingCart, Tag, Star, Settings, LogOut, Store } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Tag, Star, Settings, LogOut, Store, Ticket } from "lucide-react";
 
 const links = [
   { to: "/admin", end: true, icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/pedidos", icon: ShoppingCart, label: "Pedidos" },
   { to: "/admin/produtos", icon: Package, label: "Produtos" },
   { to: "/admin/categorias", icon: Tag, label: "Categorias" },
+  { to: "/admin/cupons", icon: Ticket, label: "Cupons" },
   { to: "/admin/depoimentos", icon: Star, label: "Depoimentos" },
   { to: "/admin/configuracoes", icon: Settings, label: "Configurações" },
 ];
