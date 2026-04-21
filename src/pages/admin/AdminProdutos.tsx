@@ -51,7 +51,7 @@ export default function AdminProdutos() {
   }, []);
 
   const novo = () => {
-    setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
+    setEdit({ nome: "", slug: "", descricao: "", preco: 0, lucro: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
     setOpen(true);
   };
   const abrir = (p: any) => {
@@ -115,7 +115,7 @@ export default function AdminProdutos() {
       .split(",")
       .map((c: string) => c.trim())
       .filter(Boolean);
-    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
+    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), lucro: Number(edit.lucro || 0), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
     delete payload.produto_categorias;
     delete payload.imagem_upload;
@@ -216,11 +216,15 @@ export default function AdminProdutos() {
                 <Field label="Slug"><Input value={edit.slug} onChange={(e) => setEdit({ ...edit, slug: slugify(e.target.value) })} /></Field>
               </div>
               <Field label="Descrição"><Textarea value={edit.descricao || ""} onChange={(e) => setEdit({ ...edit, descricao: e.target.value })} /></Field>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Field label="Preço (R$)"><Input type="number" step="0.01" value={edit.preco} onChange={(e) => setEdit({ ...edit, preco: e.target.value })} /></Field>
+                <Field label="Lucro (R$) — interno">
+                  <Input type="number" step="0.01" value={edit.lucro ?? 0} onChange={(e) => setEdit({ ...edit, lucro: e.target.value })} />
+                </Field>
                 <Field label="Peso (g)"><Input type="number" value={edit.peso_g} onChange={(e) => setEdit({ ...edit, peso_g: e.target.value })} /></Field>
                 <Field label="Estoque"><Input type="number" value={edit.estoque} onChange={(e) => setEdit({ ...edit, estoque: e.target.value })} /></Field>
               </div>
+              <p className="text-xs text-muted-foreground -mt-2">O lucro é apenas para controle interno e não aparece para os clientes.</p>
               <Field label="Dimensões">
                 <Input value={edit.dimensoes || ""} onChange={(e) => setEdit({ ...edit, dimensoes: e.target.value })} placeholder="ex: 10x10x15cm" />
               </Field>

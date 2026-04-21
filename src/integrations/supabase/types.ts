@@ -186,6 +186,7 @@ export type Database = {
           cor_selecionada: string | null
           created_at: string
           id: string
+          lucro_unitario: number
           pedido_id: string
           preco_unitario: number
           produto_id: string | null
@@ -198,6 +199,7 @@ export type Database = {
           cor_selecionada?: string | null
           created_at?: string
           id?: string
+          lucro_unitario?: number
           pedido_id: string
           preco_unitario: number
           produto_id?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           cor_selecionada?: string | null
           created_at?: string
           id?: string
+          lucro_unitario?: number
           pedido_id?: string
           preco_unitario?: number
           produto_id?: string | null
@@ -359,6 +362,7 @@ export type Database = {
           id: string
           imagem_url: string | null
           imagens_extras: Json | null
+          lucro: number
           nome: string
           ordem: number
           peso_g: number | null
@@ -378,6 +382,7 @@ export type Database = {
           id?: string
           imagem_url?: string | null
           imagens_extras?: Json | null
+          lucro?: number
           nome: string
           ordem?: number
           peso_g?: number | null
@@ -397,6 +402,7 @@ export type Database = {
           id?: string
           imagem_url?: string | null
           imagens_extras?: Json | null
+          lucro?: number
           nome?: string
           ordem?: number
           peso_g?: number | null
