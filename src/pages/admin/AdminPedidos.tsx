@@ -4,9 +4,20 @@ import { brl, statusLabels, statusColors } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Eye, Image as ImageIcon } from "lucide-react";
+import { Eye, Image as ImageIcon, Ban, RotateCcw } from "lucide-react";
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -28,7 +39,7 @@ export default function AdminPedidos() {
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("pedidos").update({ status: status as any }).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Status atualizado");
+    toast.success(status === "cancelado" ? "Pedido cancelado" : status === "analise_pagamento" ? "Pedido reativado" : "Status atualizado");
     carregar();
     if (sel?.id === id) setSel({ ...sel, status });
   };
@@ -44,18 +55,33 @@ export default function AdminPedidos() {
             </tr>
           </thead>
           <tbody>
-            {pedidos.map((p) => (
-              <tr key={p.id} className="border-t hover:bg-muted/30">
-                <td className="p-3 font-mono font-bold">{p.codigo}</td>
-                <td className="p-3">{p.cliente_nome}</td>
-                <td className="p-3 font-bold text-primary">{brl(Number(p.valor_total))}</td>
-                <td className="p-3"><Badge className={statusColors[p.status]}>{statusLabels[p.status]}</Badge></td>
-                <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
-                <td className="p-3">
-                  <Button size="sm" variant="outline" onClick={() => abrir(p)}><Eye className="h-3 w-3 mr-1" />Ver</Button>
-                </td>
-              </tr>
-            ))}
+            {pedidos.map((p) => {
+              const cancelado = p.status === "cancelado";
+              return (
+                <tr
+                  key={p.id}
+                  className={`border-t hover:bg-muted/30 ${cancelado ? "bg-destructive/5 text-muted-foreground line-through decoration-muted-foreground/40" : ""}`}
+                >
+                  <td className="p-3 font-mono font-bold no-underline">{p.codigo}</td>
+                  <td className="p-3">{p.cliente_nome}</td>
+                  <td className={`p-3 font-bold ${cancelado ? "text-muted-foreground" : "text-primary"}`}>{brl(Number(p.valor_total))}</td>
+                  <td className="p-3"><Badge className={statusColors[p.status]}>{statusLabels[p.status]}</Badge></td>
+                  <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => abrir(p)}><Eye className="h-3 w-3 mr-1" />Ver</Button>
+                      {cancelado ? (
+                        <Button size="sm" variant="outline" onClick={() => updateStatus(p.id, "analise_pagamento")} title="Reativar pedido">
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <CancelarBotao onConfirm={() => updateStatus(p.id, "cancelado")} codigo={p.codigo} compact />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -66,15 +92,30 @@ export default function AdminPedidos() {
             <>
               <DialogHeader><DialogTitle className="font-display">{sel.codigo}</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <div>
-                  <div className="text-xs font-bold uppercase text-muted-foreground mb-1">Status</div>
-                  <Select value={sel.status} onValueChange={(v) => updateStatus(sel.id, v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="text-xs font-bold uppercase text-muted-foreground mb-1">Status</div>
+                    <Select value={sel.status} onValueChange={(v) => updateStatus(sel.id, v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {sel.status === "cancelado" ? (
+                    <Button variant="outline" onClick={() => updateStatus(sel.id, "analise_pagamento")}>
+                      <RotateCcw className="h-4 w-4 mr-1" />Reativar pedido
+                    </Button>
+                  ) : (
+                    <CancelarBotao onConfirm={() => updateStatus(sel.id, "cancelado")} codigo={sel.codigo} />
+                  )}
                 </div>
+                {sel.status === "cancelado" && (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm">
+                    <strong className="text-destructive">Pedido cancelado.</strong>{" "}
+                    Não é contabilizado em faturamento, lucro ou itens vendidos.
+                  </div>
+                )}
                 <div className="text-sm space-y-1">
                   <div><strong>Cliente:</strong> {sel.cliente_nome} · {sel.cliente_telefone}</div>
                   {sel.cliente_email && <div><strong>Email:</strong> {sel.cliente_email}</div>}
@@ -122,5 +163,38 @@ export default function AdminPedidos() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function CancelarBotao({ onConfirm, codigo, compact }: { onConfirm: () => void; codigo: string; compact?: boolean }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        {compact ? (
+          <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" title="Cancelar pedido">
+            <Ban className="h-3 w-3" />
+          </Button>
+        ) : (
+          <Button variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+            <Ban className="h-4 w-4 mr-1" />Cancelar pedido
+          </Button>
+        )}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancelar pedido {codigo}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja cancelar este pedido? O pedido será mantido no sistema,
+            mas não será contabilizado no faturamento, lucro ou itens vendidos.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Cancelar pedido
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
