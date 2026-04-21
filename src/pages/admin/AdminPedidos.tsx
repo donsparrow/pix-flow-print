@@ -165,3 +165,36 @@ export default function AdminPedidos() {
     </div>
   );
 }
+
+function CancelarBotao({ onConfirm, codigo, compact }: { onConfirm: () => void; codigo: string; compact?: boolean }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        {compact ? (
+          <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" title="Cancelar pedido">
+            <Ban className="h-3 w-3" />
+          </Button>
+        ) : (
+          <Button variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+            <Ban className="h-4 w-4 mr-1" />Cancelar pedido
+          </Button>
+        )}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancelar pedido {codigo}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja cancelar este pedido? O pedido será mantido no sistema,
+            mas não será contabilizado no faturamento, lucro ou itens vendidos.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Cancelar pedido
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
