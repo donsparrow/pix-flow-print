@@ -11,25 +11,53 @@ type Cat = { id: string; nome: string; slug: string };
 
 export default function Produtos() {
   const [params, setParams] = useSearchParams();
-  const cat = params.get("categoria") || "";
+  const cat = params.get("categoria") || "todos";
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    supabase.from("categorias").select("id, nome, slug").eq("ativo", true).order("ordem").then(({ data }) => setCats(data || []));
+    supabase
+      .from("categorias")
+      .select("id, nome, slug")
+      .eq("ativo", true)
+      .order("ordem")
+      .then(({ data }) => setCats(data || []));
   }, []);
 
   useEffect(() => {
     (async () => {
+      // 1. Pega o id da categoria pelo slug (ou "todos")
+      const slugAtivo = cat || "todos";
+      const { data: catRow } = await supabase
+        .from("categorias")
+        .select("id")
+        .eq("slug", slugAtivo)
+        .maybeSingle();
+
+      // 2. Busca ids de produtos vinculados àquela categoria
+      let produtoIds: string[] | null = null;
+      if (catRow?.id) {
+        const { data: rels } = await supabase
+          .from("produto_categorias")
+          .select("produto_id")
+          .eq("categoria_id", catRow.id);
+        produtoIds = (rels || []).map((r: any) => r.produto_id);
+        if (produtoIds.length === 0) {
+          setProdutos([]);
+          return;
+        }
+      }
+
+      // 3. Busca produtos
       let query = supabase
         .from("produtos")
-        .select("id, nome, slug, preco, estoque, imagem_url, descricao, ordem, categoria_id, categorias!inner(slug)")
+        .select("id, nome, slug, preco, estoque, imagem_url, descricao, ordem, created_at")
         .eq("ativo", true);
-      if (cat) query = query.eq("categorias.slug", cat);
+      if (produtoIds) query = query.in("id", produtoIds);
       const { data } = await query;
+
       let list = (data || []) as any[];
-      // Ordenação: produtos com ordem > 0 primeiro (crescente); ordem = 0/null vão por último (mais recentes primeiro)
       list.sort((a, b) => {
         const ao = a.ordem && a.ordem > 0 ? a.ordem : Number.POSITIVE_INFINITY;
         const bo = b.ordem && b.ordem > 0 ? b.ordem : Number.POSITIVE_INFINITY;
@@ -62,14 +90,6 @@ export default function Produtos() {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button
-              size="sm"
-              variant={!cat ? "default" : "outline"}
-              onClick={() => setParams({})}
-              className="rounded-full"
-            >
-              Todos
-            </Button>
             {cats.map((c) => (
               <Button
                 key={c.id}
