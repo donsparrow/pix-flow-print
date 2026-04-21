@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { brl } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Plus } from "lucide-react";
+import { ColorPickerDialog } from "./ColorPickerDialog";
 
 export type Produto = {
   id: string;
@@ -12,11 +14,35 @@ export type Produto = {
   estoque: number;
   imagem_url: string | null;
   descricao?: string | null;
+  cores?: string[] | null;
 };
 
 export function ProductCard({ p }: { p: Produto }) {
   const { add } = useCart();
   const esgotado = p.estoque <= 0;
+  const cores = (p.cores || []).filter((c) => c && c.trim().length > 0);
+  const temCores = cores.length > 0;
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const handleAdd = () => {
+    if (temCores) {
+      setPickerOpen(true);
+      return;
+    }
+    add({ produto_id: p.id, nome: p.nome, preco: p.preco, imagem_url: p.imagem_url, estoque: p.estoque });
+  };
+
+  const handleConfirmCor = (cor: string) => {
+    add({
+      produto_id: p.id,
+      nome: p.nome,
+      preco: p.preco,
+      imagem_url: p.imagem_url,
+      estoque: p.estoque,
+      cor_selecionada: cor,
+      cores_disponiveis: cores,
+    });
+  };
 
   return (
     <div className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/40 hover:shadow-brand transition-all duration-300 hover:-translate-y-1">
@@ -51,14 +77,22 @@ export function ProductCard({ p }: { p: Produto }) {
           <Button
             size="icon"
             disabled={esgotado}
-            onClick={() => add({ produto_id: p.id, nome: p.nome, preco: p.preco, imagem_url: p.imagem_url, estoque: p.estoque })}
+            onClick={handleAdd}
             className="rounded-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md hover:shadow-glow transition-all hover:scale-110"
-            aria-label="Adicionar ao carrinho"
+            aria-label={temCores ? "Escolher cor" : "Adicionar ao carrinho"}
           >
             <Plus className="h-5 w-5" />
           </Button>
         </div>
       </div>
+      {temCores && (
+        <ColorPickerDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          produto={{ nome: p.nome, preco: p.preco, imagem_url: p.imagem_url, cores }}
+          onConfirm={handleConfirmCor}
+        />
+      )}
     </div>
   );
 }

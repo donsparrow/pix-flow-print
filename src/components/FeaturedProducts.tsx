@@ -12,7 +12,7 @@ export function FeaturedProducts() {
     (async () => {
       const { data } = await supabase
         .from("produtos")
-        .select("id, nome, slug, preco, estoque, imagem_url, descricao, destaque, ordem, created_at")
+        .select("id, nome, slug, preco, estoque, imagem_url, descricao, destaque, ordem, created_at, cores")
         .eq("ativo", true);
       const list = ((data || []) as any[]).sort((a, b) => {
         // Ordem manual crescente; 0/null vão por último
