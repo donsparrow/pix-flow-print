@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { HeroVideoEditor } from "@/components/admin/HeroVideoEditor";
+import { InstagramPostsEditor } from "@/components/admin/InstagramPostsEditor";
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
