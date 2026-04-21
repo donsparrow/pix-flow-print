@@ -86,7 +86,7 @@ export default function AdminPedidos() {
                   <div className="font-bold mb-2">Itens</div>
                   {itens.map((i) => (
                     <div key={i.id} className="flex justify-between text-sm py-1">
-                      <span>{i.quantidade}× {i.produto_nome}</span>
+                      <span>{i.quantidade}× {i.produto_nome}{i.cor_selecionada && <span className="text-muted-foreground"> · Cor: <strong className="text-foreground">{i.cor_selecionada}</strong></span>}</span>
                       <span>{brl(Number(i.subtotal))}</span>
                     </div>
                   ))}

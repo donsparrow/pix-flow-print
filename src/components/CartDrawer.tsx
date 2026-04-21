@@ -28,22 +28,25 @@ export function CartDrawer() {
           <>
             <div className="flex-1 overflow-y-auto -mx-6 px-6 mt-4 space-y-3">
               {items.map((i) => (
-                <div key={i.produto_id} className="flex gap-3 p-3 bg-muted/40 rounded-xl">
+                <div key={`${i.produto_id}-${i.cor_selecionada || ""}`} className="flex gap-3 p-3 bg-muted/40 rounded-xl">
                   {i.imagem_url && (
                     <img src={i.imagem_url} alt={i.nome} className="w-16 h-16 rounded-lg object-cover" />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm line-clamp-2">{i.nome}</div>
+                    {i.cor_selecionada && (
+                      <div className="text-xs text-muted-foreground mt-0.5">Cor: <span className="font-semibold text-foreground">{i.cor_selecionada}</span></div>
+                    )}
                     <div className="text-primary font-bold text-sm mt-1">{brl(i.preco)}</div>
                     <div className="flex items-center gap-2 mt-2">
-                      <Button size="icon" variant="outline" className="h-7 w-7 rounded-full" onClick={() => setQty(i.produto_id, i.quantidade - 1)}>
+                      <Button size="icon" variant="outline" className="h-7 w-7 rounded-full" onClick={() => setQty(i.produto_id, i.quantidade - 1, i.cor_selecionada)}>
                         <Minus className="h-3 w-3" />
                       </Button>
                       <span className="font-bold w-6 text-center text-sm">{i.quantidade}</span>
-                      <Button size="icon" variant="outline" className="h-7 w-7 rounded-full" onClick={() => setQty(i.produto_id, i.quantidade + 1)}>
+                      <Button size="icon" variant="outline" className="h-7 w-7 rounded-full" onClick={() => setQty(i.produto_id, i.quantidade + 1, i.cor_selecionada)}>
                         <Plus className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full ml-auto text-destructive hover:bg-destructive/10" onClick={() => remove(i.produto_id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full ml-auto text-destructive hover:bg-destructive/10" onClick={() => remove(i.produto_id, i.cor_selecionada)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>

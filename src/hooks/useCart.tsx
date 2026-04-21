@@ -7,13 +7,15 @@ export type CartItem = {
   imagem_url: string | null;
   quantidade: number;
   estoque: number;
+  cor_selecionada?: string | null;
+  cores_disponiveis?: string[] | null;
 };
 
 type CartContextType = {
   items: CartItem[];
   add: (item: Omit<CartItem, "quantidade">, qty?: number) => void;
-  remove: (produto_id: string) => void;
-  setQty: (produto_id: string, qty: number) => void;
+  remove: (produto_id: string, cor?: string | null) => void;
+  setQty: (produto_id: string, qty: number, cor?: string | null) => void;
   clear: () => void;
   total: number;
   count: number;
@@ -23,6 +25,9 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null);
 const STORAGE_KEY = "jrtl_cart_v1";
+
+const sameLine = (a: CartItem, produto_id: string, cor?: string | null) =>
+  a.produto_id === produto_id && (a.cor_selecionada || null) === (cor || null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -41,11 +46,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add: CartContextType["add"] = (item, qty = 1) => {
     setItems((prev) => {
-      const found = prev.find((i) => i.produto_id === item.produto_id);
+      const found = prev.find((i) => sameLine(i, item.produto_id, item.cor_selecionada));
       if (found) {
         const newQty = Math.min(found.quantidade + qty, item.estoque);
         return prev.map((i) =>
-          i.produto_id === item.produto_id ? { ...i, quantidade: newQty } : i
+          sameLine(i, item.produto_id, item.cor_selecionada) ? { ...i, quantidade: newQty } : i
         );
       }
       return [...prev, { ...item, quantidade: Math.min(qty, item.estoque) }];
@@ -53,13 +58,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setOpen(true);
   };
 
-  const remove = (produto_id: string) =>
-    setItems((prev) => prev.filter((i) => i.produto_id !== produto_id));
+  const remove = (produto_id: string, cor?: string | null) =>
+    setItems((prev) => prev.filter((i) => !sameLine(i, produto_id, cor)));
 
-  const setQty = (produto_id: string, qty: number) =>
+  const setQty = (produto_id: string, qty: number, cor?: string | null) =>
     setItems((prev) =>
       prev.map((i) =>
-        i.produto_id === produto_id
+        sameLine(i, produto_id, cor)
           ? { ...i, quantidade: Math.max(1, Math.min(qty, i.estoque)) }
           : i
       )
