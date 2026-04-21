@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Truck, ShoppingBag, ArrowLeft } from "lucide-react";
+import { Truck, ShoppingBag, ArrowLeft, Ticket, X } from "lucide-react";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Informe seu nome").max(100),
@@ -41,10 +41,15 @@ export default function Checkout() {
     bairro: "", cidade: "", estado: "", observacoes: "",
   });
 
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; desconto: number } | null>(null);
+  const [validandoCupom, setValidandoCupom] = useState(false);
+
   const freteGV = parseFloat(config.frete_grande_vitoria || "0");
   const freteDR = parseFloat(config.frete_demais_regioes || "0");
   const valorFrete = metodo === "grande_vitoria" ? freteGV : metodo === "demais_regioes" ? freteDR : 0;
-  const totalGeral = total + valorFrete;
+  const desconto = cupomAplicado?.desconto || 0;
+  const totalGeral = Math.max(0, total - desconto) + valorFrete;
 
   const update = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
