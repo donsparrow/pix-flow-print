@@ -15,6 +15,7 @@ export function FeaturedProducts() {
         .select("id, nome, slug, preco, estoque, imagem_url, descricao, destaque, created_at")
         .eq("ativo", true)
         .order("destaque", { ascending: false })
+        .order("ordem", { ascending: true })
         .order("created_at", { ascending: false })
         .limit(8);
       setProdutos((data || []) as any);

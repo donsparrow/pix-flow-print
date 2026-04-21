@@ -26,6 +26,7 @@ export default function Produtos() {
         .from("produtos")
         .select("id, nome, slug, preco, estoque, imagem_url, descricao, categoria_id, categorias!inner(slug)")
         .eq("ativo", true)
+        .order("ordem", { ascending: true })
         .order("created_at", { ascending: false });
       if (cat) query = query.eq("categorias.slug", cat);
       const { data } = await query;
