@@ -83,12 +83,22 @@ export default function AdminProdutos() {
     const todos = cats.find((c) => c.slug === "todos");
     const finalIds = Array.from(new Set([...(categoriaIds || []), ...(todos ? [todos.id] : [])]));
 
-    // Remove vínculos atuais e recria
-    await supabase.from("produto_categorias").delete().eq("produto_id", produtoId);
+    // Remove vínculos que não estão mais selecionados
+    await supabase
+      .from("produto_categorias")
+      .delete()
+      .eq("produto_id", produtoId)
+      .not("categoria_id", "in", `(${finalIds.join(",")})`);
+
+    // Insere novos vínculos ignorando duplicatas (trigger pode ter recriado "Todos")
     if (finalIds.length > 0) {
-      await supabase.from("produto_categorias").insert(
-        finalIds.map((cid) => ({ produto_id: produtoId, categoria_id: cid }))
-      );
+      const { error } = await supabase
+        .from("produto_categorias")
+        .upsert(
+          finalIds.map((cid) => ({ produto_id: produtoId, categoria_id: cid })),
+          { onConflict: "produto_id,categoria_id", ignoreDuplicates: true }
+        );
+      if (error) throw error;
     }
   };
 
