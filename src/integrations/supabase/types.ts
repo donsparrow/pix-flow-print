@@ -272,6 +272,7 @@ export type Database = {
           imagem_url: string | null
           imagens_extras: Json | null
           nome: string
+          ordem: number
           peso_g: number | null
           preco: number
           slug: string
@@ -289,6 +290,7 @@ export type Database = {
           imagem_url?: string | null
           imagens_extras?: Json | null
           nome: string
+          ordem?: number
           peso_g?: number | null
           preco: number
           slug: string
@@ -306,6 +308,7 @@ export type Database = {
           imagem_url?: string | null
           imagens_extras?: Json | null
           nome?: string
+          ordem?: number
           peso_g?: number | null
           preco?: number
           slug?: string
