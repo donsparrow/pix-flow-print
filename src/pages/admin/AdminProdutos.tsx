@@ -51,46 +51,72 @@ export default function AdminProdutos() {
   }, []);
 
   const novo = () => {
-    setEdit({ nome: "", slug: "", descricao: "", preco: 0, lucro: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
+    setEdit({ nome: "", slug: "", descricao: "", preco: 0, lucro: 0, peso_g: 0, dimensoes: "", estoque: 0, imagens: [], imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
     setOpen(true);
   };
   const abrir = (p: any) => {
-    const isUpload = !!p.imagem_url && p.imagem_url.includes("/storage/v1/object/public/produtos/");
     const cores_texto = Array.isArray(p.cores) ? p.cores.join(", ") : "";
     const categoria_ids = (p.produto_categorias || []).map((pc: any) => pc.categoria_id);
-    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto, categoria_ids });
+    const extras = Array.isArray(p.imagens_extras) ? p.imagens_extras.filter((u: any) => typeof u === "string" && u) : [];
+    const imagens: string[] = [];
+    if (p.imagem_url) imagens.push(p.imagem_url);
+    for (const u of extras) if (!imagens.includes(u)) imagens.push(u);
+    setEdit({ ...p, imagens, imagem_link: "", cores_texto, categoria_ids });
     setOpen(true);
   };
 
-  const uploadImg = async (f: File) => {
+  const uploadImg = async (files: FileList) => {
     const tiposOk = ["image/jpeg", "image/png", "image/webp"];
-    if (!tiposOk.includes(f.type)) return toast.error("Use JPG, PNG ou WEBP");
-    if (f.size > 5 * 1024 * 1024) return toast.error("Imagem deve ter até 5MB");
-    const ext = f.name.split(".").pop();
-    const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("produtos").upload(path, f, { cacheControl: "31536000", contentType: f.type });
-    if (error) { toast.error(error.message); return; }
-    const { data: { publicUrl } } = supabase.storage.from("produtos").getPublicUrl(path);
-    setEdit({ ...edit, imagem_upload: publicUrl });
-    toast.success("Imagem enviada");
+    const novas: string[] = [];
+    for (const f of Array.from(files)) {
+      if (!tiposOk.includes(f.type)) { toast.error(`${f.name}: use JPG, PNG ou WEBP`); continue; }
+      if (f.size > 5 * 1024 * 1024) { toast.error(`${f.name}: até 5MB`); continue; }
+      const ext = f.name.split(".").pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("produtos").upload(path, f, { cacheControl: "31536000", contentType: f.type });
+      if (error) { toast.error(error.message); continue; }
+      const { data: { publicUrl } } = supabase.storage.from("produtos").getPublicUrl(path);
+      novas.push(publicUrl);
+    }
+    if (novas.length > 0) {
+      setEdit((cur: any) => ({ ...cur, imagens: [...(cur.imagens || []), ...novas] }));
+      toast.success(`${novas.length} imagem(ns) enviada(s)`);
+    }
   };
 
-  const removerUpload = () => setEdit({ ...edit, imagem_upload: "" });
-  const removerLink = () => setEdit({ ...edit, imagem_link: "" });
+  const adicionarLink = () => {
+    const url = (edit.imagem_link || "").trim();
+    if (!url) return;
+    setEdit({ ...edit, imagens: [...(edit.imagens || []), url], imagem_link: "" });
+  };
+  const removerImagem = (idx: number) => {
+    const arr = [...(edit.imagens || [])];
+    arr.splice(idx, 1);
+    setEdit({ ...edit, imagens: arr });
+  };
+  const definirCapa = (idx: number) => {
+    if (idx === 0) return;
+    const arr = [...(edit.imagens || [])];
+    const [item] = arr.splice(idx, 1);
+    arr.unshift(item);
+    setEdit({ ...edit, imagens: arr });
+  };
+  const moverImagem = (idx: number, dir: -1 | 1) => {
+    const arr = [...(edit.imagens || [])];
+    const novo = idx + dir;
+    if (novo < 0 || novo >= arr.length) return;
+    [arr[idx], arr[novo]] = [arr[novo], arr[idx]];
+    setEdit({ ...edit, imagens: arr });
+  };
 
   const sincronizarCategorias = async (produtoId: string, categoriaIds: string[]) => {
-    // Garante "Todos" sempre presente
     const todos = cats.find((c) => c.slug === "todos");
     const finalIds = Array.from(new Set([...(categoriaIds || []), ...(todos ? [todos.id] : [])]));
-
-    // Remove vínculos que não estão mais selecionados
     await supabase
       .from("produto_categorias")
       .delete()
       .eq("produto_id", produtoId)
       .not("categoria_id", "in", `(${finalIds.join(",")})`);
-
-    // Insere novos vínculos ignorando duplicatas (trigger pode ter recriado "Todos")
     if (finalIds.length > 0) {
       const { error } = await supabase
         .from("produto_categorias")
@@ -110,19 +136,22 @@ export default function AdminProdutos() {
       return toast.error("Selecione ao menos uma categoria além de 'Todos'");
     }
 
-    const imagem_url = edit.imagem_upload || edit.imagem_link || null;
+    const imagens: string[] = (edit.imagens || []).filter((u: string) => typeof u === "string" && u.trim());
+    const imagem_url = imagens[0] || null;
+    const imagens_extras = imagens.slice(1);
+
     const cores = (edit.cores_texto || "")
       .split(",")
       .map((c: string) => c.trim())
       .filter(Boolean);
-    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), lucro: Number(edit.lucro || 0), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
+    const payload: any = { ...edit, imagem_url, imagens_extras, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), lucro: Number(edit.lucro || 0), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
     delete payload.produto_categorias;
-    delete payload.imagem_upload;
+    delete payload.imagens;
     delete payload.imagem_link;
     delete payload.cores_texto;
     delete payload.categoria_ids;
-    delete payload.categoria_id; // legacy: ignorado
+    delete payload.categoria_id;
 
     let produtoId = edit.id;
     if (produtoId) {
