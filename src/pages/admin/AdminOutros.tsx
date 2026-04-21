@@ -21,11 +21,22 @@ export function AdminCategorias() {
   const carregar = () => supabase.from("categorias").select("*").order("ordem").then(({ data }) => setList(data || []));
   useEffect(() => { carregar(); }, []);
 
+  const [adicionando, setAdicionando] = useState(false);
   const add = async () => {
-    if (!nome) return;
-    const { error } = await supabase.from("categorias").insert({ nome, slug: slugify(nome), ordem: list.length + 1 });
+    const nomeLimpo = nome.trim();
+    if (!nomeLimpo) return toast.error("Informe o nome da categoria");
+    const slug = slugify(nomeLimpo);
+    if (!slug) return toast.error("Nome inválido");
+    if (list.some((c) => c.slug === slug || c.nome.toLowerCase() === nomeLimpo.toLowerCase())) {
+      return toast.error("Já existe uma categoria com esse nome");
+    }
+    setAdicionando(true);
+    const { error } = await supabase.from("categorias").insert({ nome: nomeLimpo, slug, ordem: list.length + 1 });
+    setAdicionando(false);
     if (error) return toast.error(error.message);
-    setNome(""); toast.success("Categoria criada"); carregar();
+    setNome("");
+    toast.success("Categoria criada com sucesso");
+    carregar();
   };
 
   const del = async (id: string, slug: string) => {
