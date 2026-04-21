@@ -235,13 +235,12 @@ export function AdminCategorias() {
                   </div>
                   <div>
                     <Label className="text-xs font-bold">Emoji (fallback)</Label>
-                    <Input
-                      value={editForm.emoji}
-                      onChange={(e) => setEditForm({ ...editForm, emoji: e.target.value })}
-                      placeholder="🦸"
-                      maxLength={4}
-                      className="w-24 text-2xl"
-                    />
+                    <div className="mt-1">
+                      <EmojiSelector
+                        value={editForm.emoji}
+                        onChange={(emoji) => setEditForm({ ...editForm, emoji })}
+                      />
+                    </div>
                     <p className="text-[10px] text-muted-foreground mt-1">Usado quando não houver imagem.</p>
                   </div>
                   <div className="flex justify-end gap-2 pt-2 border-t">
