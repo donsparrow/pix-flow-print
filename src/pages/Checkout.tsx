@@ -80,7 +80,8 @@ export default function Checkout() {
       _metodo_frete: metodo,
       _valor_frete: valorFrete,
       _observacoes: form.observacoes || null,
-    });
+      _cupom_codigo: cupomAplicado?.codigo || null,
+    } as any);
     setSubmitting(false);
 
     if (error || !data || (Array.isArray(data) && data.length === 0)) {
