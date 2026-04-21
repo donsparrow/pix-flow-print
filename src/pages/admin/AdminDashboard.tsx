@@ -1,34 +1,43 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { brl, statusLabels } from "@/lib/format";
-import { ShoppingCart, DollarSign, Clock, TrendingUp } from "lucide-react";
+import { brl } from "@/lib/format";
+import { ShoppingCart, DollarSign, Clock, TrendingUp, Wallet } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ faturamento: 0, total: 0, pendentes: 0, maisVendidos: [] as any[] });
+  const [stats, setStats] = useState({ faturamento: 0, lucro: 0, total: 0, pendentes: 0, maisVendidos: [] as any[] });
 
   useEffect(() => {
     (async () => {
-      const { data: pedidos } = await supabase.from("pedidos").select("valor_total, status");
-      const { data: itens } = await supabase.from("itens_pedido").select("produto_nome, quantidade");
-      const fat = (pedidos || []).filter((p) => p.status !== "cancelado").reduce((s, p) => s + Number(p.valor_total), 0);
+      const { data: pedidos } = await supabase.from("pedidos").select("id, valor_total, status");
+      const { data: itens } = await supabase.from("itens_pedido").select("produto_nome, quantidade, lucro_unitario, pedido_id");
+      const validos = (pedidos || []).filter((p) => p.status !== "cancelado");
+      const validIds = new Set(validos.map((p) => p.id));
+      const fat = validos.reduce((s, p) => s + Number(p.valor_total), 0);
       const pend = (pedidos || []).filter((p) => p.status === "analise_pagamento").length;
 
+      const itensValidos = (itens || []).filter((i: any) => validIds.has(i.pedido_id));
+      const lucroTotal = itensValidos.reduce(
+        (s, i: any) => s + Number(i.lucro_unitario || 0) * Number(i.quantidade || 0),
+        0
+      );
+
       const map = new Map<string, number>();
-      (itens || []).forEach((i) => map.set(i.produto_nome, (map.get(i.produto_nome) || 0) + i.quantidade));
+      itensValidos.forEach((i: any) => map.set(i.produto_nome, (map.get(i.produto_nome) || 0) + i.quantidade));
       const top = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-      setStats({ faturamento: fat, total: pedidos?.length || 0, pendentes: pend, maisVendidos: top });
+      setStats({ faturamento: fat, lucro: lucroTotal, total: pedidos?.length || 0, pendentes: pend, maisVendidos: top });
     })();
   }, []);
 
   return (
     <div className="space-y-6 max-w-6xl">
       <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card icon={<DollarSign />} label="Faturamento" value={brl(stats.faturamento)} color="bg-success" />
-        <Card icon={<ShoppingCart />} label="Pedidos" value={stats.total} color="bg-primary" />
+        <Card icon={<Wallet />} label="Lucro total" value={brl(stats.lucro)} color="bg-primary" />
+        <Card icon={<ShoppingCart />} label="Pedidos" value={stats.total} color="bg-secondary" />
         <Card icon={<Clock />} label="Pendentes" value={stats.pendentes} color="bg-warning" />
-        <Card icon={<TrendingUp />} label="Itens vendidos" value={stats.maisVendidos.reduce((s, [, q]) => s + q, 0)} color="bg-secondary" />
+        <Card icon={<TrendingUp />} label="Itens vendidos" value={stats.maisVendidos.reduce((s, [, q]) => s + q, 0)} color="bg-accent" />
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-6">
