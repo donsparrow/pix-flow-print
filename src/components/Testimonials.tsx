@@ -26,9 +26,9 @@ export function Testimonials() {
     <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
       <div className="container">
         <div className="text-center mb-12">
-          <div className="text-sm font-bold text-success uppercase tracking-wider mb-2">Quem comprou</div>
+          <div className="text-sm font-bold text-success uppercase tracking-wider mb-2">QUEM COMPRA,</div>
           <h2 className="font-display text-4xl md:text-5xl font-bold">
-            Quer mesmo <span className="text-gradient-brand">recomenda</span>
+            volta e <span className="text-gradient-brand">recomenda</span>
           </h2>
         </div>
 

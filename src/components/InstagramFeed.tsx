@@ -44,7 +44,7 @@ export function InstagramFeed() {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/30 mb-4">
           <Sparkles className="h-3.5 w-3.5 text-secondary" />
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
-            Vitrine social
+            REDE SOCIAL
           </span>
         </div>
         <h2 className="font-display text-4xl md:text-5xl font-bold mb-3">
