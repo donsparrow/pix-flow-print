@@ -55,18 +55,33 @@ export default function AdminPedidos() {
             </tr>
           </thead>
           <tbody>
-            {pedidos.map((p) => (
-              <tr key={p.id} className="border-t hover:bg-muted/30">
-                <td className="p-3 font-mono font-bold">{p.codigo}</td>
-                <td className="p-3">{p.cliente_nome}</td>
-                <td className="p-3 font-bold text-primary">{brl(Number(p.valor_total))}</td>
-                <td className="p-3"><Badge className={statusColors[p.status]}>{statusLabels[p.status]}</Badge></td>
-                <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
-                <td className="p-3">
-                  <Button size="sm" variant="outline" onClick={() => abrir(p)}><Eye className="h-3 w-3 mr-1" />Ver</Button>
-                </td>
-              </tr>
-            ))}
+            {pedidos.map((p) => {
+              const cancelado = p.status === "cancelado";
+              return (
+                <tr
+                  key={p.id}
+                  className={`border-t hover:bg-muted/30 ${cancelado ? "bg-destructive/5 text-muted-foreground line-through decoration-muted-foreground/40" : ""}`}
+                >
+                  <td className="p-3 font-mono font-bold no-underline">{p.codigo}</td>
+                  <td className="p-3">{p.cliente_nome}</td>
+                  <td className={`p-3 font-bold ${cancelado ? "text-muted-foreground" : "text-primary"}`}>{brl(Number(p.valor_total))}</td>
+                  <td className="p-3"><Badge className={statusColors[p.status]}>{statusLabels[p.status]}</Badge></td>
+                  <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => abrir(p)}><Eye className="h-3 w-3 mr-1" />Ver</Button>
+                      {cancelado ? (
+                        <Button size="sm" variant="outline" onClick={() => updateStatus(p.id, "analise_pagamento")} title="Reativar pedido">
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <CancelarBotao onConfirm={() => updateStatus(p.id, "cancelado")} codigo={p.codigo} compact />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
