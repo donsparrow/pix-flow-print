@@ -101,8 +101,8 @@ export function AdminConfiguracoes() {
     toast.success("Salvo");
   };
 
-  // Vídeo da home tem editor dedicado
-  const HIDDEN = ["hero_video_url", "hero_video_upload"];
+  // Vídeo da home e Instagram têm editores dedicados
+  const HIDDEN = ["hero_video_url", "hero_video_upload", "instagram_handle", "instagram_subtitulo", "instagram_posts"];
   const visiveis = list.filter((c) => !HIDDEN.includes(c.chave));
 
   return (
@@ -111,6 +111,7 @@ export function AdminConfiguracoes() {
       <p className="text-sm text-muted-foreground">Chave PIX, WhatsApp, fretes, vídeo da home, Instagram, etc.</p>
 
       <HeroVideoEditor />
+      <InstagramPostsEditor />
 
       <div className="space-y-3">
         {visiveis.map((c) => (
