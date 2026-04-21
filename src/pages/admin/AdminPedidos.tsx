@@ -1,0 +1,114 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { brl, statusLabels, statusColors } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Eye, Image as ImageIcon } from "lucide-react";
+
+export default function AdminPedidos() {
+  const [pedidos, setPedidos] = useState<any[]>([]);
+  const [sel, setSel] = useState<any>(null);
+  const [itens, setItens] = useState<any[]>([]);
+  const [comp, setComp] = useState<any>(null);
+
+  const carregar = () => supabase.from("pedidos").select("*").order("created_at", { ascending: false }).then(({ data }) => setPedidos(data || []));
+  useEffect(() => { carregar(); }, []);
+
+  const abrir = async (p: any) => {
+    setSel(p);
+    const { data: i } = await supabase.from("itens_pedido").select("*").eq("pedido_id", p.id);
+    setItens(i || []);
+    const { data: c } = await supabase.from("comprovantes").select("*").eq("pedido_id", p.id).order("created_at", { ascending: false }).maybeSingle();
+    setComp(c);
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from("pedidos").update({ status: status as any }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Status atualizado");
+    carregar();
+    if (sel?.id === id) setSel({ ...sel, status });
+  };
+
+  return (
+    <div className="space-y-6 max-w-6xl">
+      <h1 className="font-display text-3xl font-bold">Pedidos</h1>
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3">Código</th><th className="p-3">Cliente</th><th className="p-3">Total</th><th className="p-3">Status</th><th className="p-3">Data</th><th className="p-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pedidos.map((p) => (
+              <tr key={p.id} className="border-t hover:bg-muted/30">
+                <td className="p-3 font-mono font-bold">{p.codigo}</td>
+                <td className="p-3">{p.cliente_nome}</td>
+                <td className="p-3 font-bold text-primary">{brl(Number(p.valor_total))}</td>
+                <td className="p-3"><Badge className={statusColors[p.status]}>{statusLabels[p.status]}</Badge></td>
+                <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
+                <td className="p-3">
+                  <Button size="sm" variant="outline" onClick={() => abrir(p)}><Eye className="h-3 w-3 mr-1" />Ver</Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={!!sel} onOpenChange={(o) => !o && setSel(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {sel && (
+            <>
+              <DialogHeader><DialogTitle className="font-display">{sel.codigo}</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground mb-1">Status</div>
+                  <Select value={sel.status} onValueChange={(v) => updateStatus(sel.id, v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="text-sm space-y-1">
+                  <div><strong>Cliente:</strong> {sel.cliente_nome} · {sel.cliente_telefone}</div>
+                  {sel.cliente_email && <div><strong>Email:</strong> {sel.cliente_email}</div>}
+                  {sel.cliente_endereco && <div><strong>Endereço:</strong> {sel.cliente_endereco}, {sel.cliente_numero} — {sel.cliente_bairro}, {sel.cliente_cidade}/{sel.cliente_estado} — CEP {sel.cliente_cep}</div>}
+                  <div><strong>Frete:</strong> {sel.metodo_frete} ({brl(Number(sel.valor_frete))})</div>
+                  {sel.observacoes && <div><strong>Obs:</strong> {sel.observacoes}</div>}
+                </div>
+                <div className="border rounded-xl p-3">
+                  <div className="font-bold mb-2">Itens</div>
+                  {itens.map((i) => (
+                    <div key={i.id} className="flex justify-between text-sm py-1">
+                      <span>{i.quantidade}× {i.produto_nome}</span>
+                      <span>{brl(Number(i.subtotal))}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                    <span>Total</span><span className="text-primary">{brl(Number(sel.valor_total))}</span>
+                  </div>
+                </div>
+                {comp ? (
+                  <div>
+                    <div className="font-bold mb-2 flex items-center gap-2"><ImageIcon className="h-4 w-4" />Comprovante</div>
+                    <a href={comp.arquivo_url} target="_blank" rel="noreferrer">
+                      <img src={comp.arquivo_url} alt="Comprovante" className="rounded-xl border max-h-80 mx-auto" />
+                    </a>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Sem comprovante enviado.</div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
