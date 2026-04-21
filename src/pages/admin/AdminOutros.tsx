@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { HeroVideoEditor } from "@/components/admin/HeroVideoEditor";
-import { InstagramPostsEditor } from "@/components/admin/InstagramPostsEditor";
+import { InstagramEmbedEditor } from "@/components/admin/InstagramEmbedEditor";
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -102,7 +102,7 @@ export function AdminConfiguracoes() {
   };
 
   // Vídeo da home e Instagram têm editores dedicados
-  const HIDDEN = ["hero_video_url", "hero_video_upload", "instagram_handle", "instagram_subtitulo", "instagram_posts"];
+  const HIDDEN = ["hero_video_url", "hero_video_upload", "instagram_handle", "instagram_subtitulo", "instagram_posts", "instagram_embed_code"];
   const visiveis = list.filter((c) => !HIDDEN.includes(c.chave));
 
   return (
@@ -111,7 +111,7 @@ export function AdminConfiguracoes() {
       <p className="text-sm text-muted-foreground">Chave PIX, WhatsApp, fretes, vídeo da home, Instagram, etc.</p>
 
       <HeroVideoEditor />
-      <InstagramPostsEditor />
+      <InstagramEmbedEditor />
 
       <div className="space-y-3">
         {visiveis.map((c) => (
