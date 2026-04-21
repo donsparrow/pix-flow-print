@@ -49,12 +49,23 @@ export function ProductCard({ p }: { p: Produto }) {
     <div className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/40 hover:shadow-brand transition-all duration-300 hover:-translate-y-1">
       <Link to={`/produto/${p.slug}`} className="block relative aspect-square overflow-hidden bg-muted">
         {p.imagem_url ? (
-          <img
-            src={p.imagem_url}
-            alt={p.nome}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
+          <>
+            <img
+              src={p.imagem_url}
+              alt={p.nome}
+              loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            {Array.isArray(p.imagens_extras) && p.imagens_extras[0] && (
+              <img
+                src={p.imagens_extras[0]}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              />
+            )}
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Sem imagem</div>
         )}
