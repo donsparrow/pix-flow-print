@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, Lock } from "lucide-react";
 import { HeroVideoEditor } from "@/components/admin/HeroVideoEditor";
 import { InstagramEmbedEditor } from "@/components/admin/InstagramEmbedEditor";
 
@@ -15,6 +15,9 @@ const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300
 export function AdminCategorias() {
   const [list, setList] = useState<any[]>([]);
   const [nome, setNome] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ nome: string; slug: string }>({ nome: "", slug: "" });
+
   const carregar = () => supabase.from("categorias").select("*").order("ordem").then(({ data }) => setList(data || []));
   useEffect(() => { carregar(); }, []);
 
@@ -22,33 +25,77 @@ export function AdminCategorias() {
     if (!nome) return;
     const { error } = await supabase.from("categorias").insert({ nome, slug: slugify(nome), ordem: list.length + 1 });
     if (error) return toast.error(error.message);
-    setNome(""); carregar();
+    setNome(""); toast.success("Categoria criada"); carregar();
   };
-  const del = async (id: string) => {
-    if (!confirm("Excluir?")) return;
-    await supabase.from("categorias").delete().eq("id", id);
-    carregar();
+
+  const del = async (id: string, slug: string) => {
+    if (slug === "todos") return toast.error('A categoria "Todos" não pode ser excluída');
+    if (!confirm("Excluir esta categoria? Os produtos vinculados a ela serão movidos automaticamente para 'Todos' caso não tenham outra categoria.")) return;
+    const { error } = await supabase.from("categorias").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Categoria excluída"); carregar();
   };
+
   const toggle = async (id: string, ativo: boolean) => {
     await supabase.from("categorias").update({ ativo }).eq("id", id);
     carregar();
   };
 
+  const startEdit = (c: any) => { setEditId(c.id); setEditForm({ nome: c.nome, slug: c.slug }); };
+  const cancelEdit = () => { setEditId(null); };
+  const saveEdit = async (id: string, slugAtual: string) => {
+    if (!editForm.nome || !editForm.slug) return toast.error("Nome e slug obrigatórios");
+    if (slugAtual === "todos" && editForm.slug !== "todos") return toast.error('A categoria "Todos" não pode ter o slug alterado');
+    const { error } = await supabase.from("categorias").update({ nome: editForm.nome, slug: slugify(editForm.slug) }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Categoria atualizada"); setEditId(null); carregar();
+  };
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="font-display text-3xl font-bold">Categorias</h1>
+    <div className="space-y-6 max-w-3xl">
+      <div>
+        <h1 className="font-display text-3xl font-bold">Categorias</h1>
+        <p className="text-sm text-muted-foreground mt-1">A categoria <strong>Todos</strong> é padrão do sistema — todo produto pertence a ela automaticamente.</p>
+      </div>
       <div className="flex gap-2">
-        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da categoria" />
-        <Button onClick={add}><Plus className="h-4 w-4" /></Button>
+        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da nova categoria" onKeyDown={(e) => e.key === "Enter" && add()} />
+        <Button onClick={add}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
       </div>
       <div className="space-y-2">
-        {list.map((c) => (
-          <div key={c.id} className="flex items-center gap-3 p-3 bg-card border rounded-xl">
-            <div className="flex-1 font-semibold">{c.nome}</div>
-            <Switch checked={c.ativo} onCheckedChange={(v) => toggle(c.id, v)} />
-            <Button size="icon" variant="ghost" onClick={() => del(c.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
-          </div>
-        ))}
+        {list.map((c) => {
+          const isTodos = c.slug === "todos";
+          const isEditing = editId === c.id;
+          return (
+            <div key={c.id} className="flex items-center gap-3 p-3 bg-card border rounded-xl">
+              {isEditing ? (
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} placeholder="Nome" />
+                  <Input value={editForm.slug} onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })} placeholder="Slug" disabled={isTodos} />
+                </div>
+              ) : (
+                <div className="flex-1">
+                  <div className="font-semibold flex items-center gap-2">
+                    {c.nome}
+                    {isTodos && <span className="text-[10px] uppercase font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Lock className="h-3 w-3" />Padrão</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono">{c.slug}</div>
+                </div>
+              )}
+              {isEditing ? (
+                <>
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit(c.id, c.slug)} className="text-success"><Check className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
+                </>
+              ) : (
+                <>
+                  <Switch checked={c.ativo} onCheckedChange={(v) => toggle(c.id, v)} />
+                  <Button size="icon" variant="ghost" onClick={() => startEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => del(c.id, c.slug)} disabled={isTodos} className="text-destructive disabled:text-muted-foreground"><Trash2 className="h-4 w-4" /></Button>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -101,7 +148,6 @@ export function AdminConfiguracoes() {
     toast.success("Salvo");
   };
 
-  // Vídeo da home e Instagram têm editores dedicados
   const HIDDEN = ["hero_video_url", "hero_video_upload", "instagram_handle", "instagram_subtitulo", "instagram_posts", "instagram_embed_code"];
   const visiveis = list.filter((c) => !HIDDEN.includes(c.chave));
 

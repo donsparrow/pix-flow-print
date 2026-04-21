@@ -36,24 +36,29 @@ export default function AdminProdutos() {
   const [edit, setEdit] = useState<any>(null);
   const [open, setOpen] = useState(false);
 
-  const carregar = () =>
-    supabase
+  const carregar = async () => {
+    const { data } = await supabase
       .from("produtos")
-      .select("*, categorias(nome)")
+      .select("*, produto_categorias(categoria_id, categorias(id, nome, slug))")
       .order("ordem", { ascending: true })
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setList(data || []));
+      .order("created_at", { ascending: false });
+    setList(data || []);
+  };
 
   useEffect(() => {
     carregar();
-    supabase.from("categorias").select("id, nome").then(({ data }) => setCats(data || []));
+    supabase.from("categorias").select("id, nome, slug").order("nome").then(({ data }) => setCats(data || []));
   }, []);
 
-  const novo = () => { setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_id: null, ativo: true, destaque: false, cores_texto: "" }); setOpen(true); };
+  const novo = () => {
+    setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
+    setOpen(true);
+  };
   const abrir = (p: any) => {
     const isUpload = !!p.imagem_url && p.imagem_url.includes("/storage/v1/object/public/produtos/");
     const cores_texto = Array.isArray(p.cores) ? p.cores.join(", ") : "";
-    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto });
+    const categoria_ids = (p.produto_categorias || []).map((pc: any) => pc.categoria_id);
+    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto, categoria_ids });
     setOpen(true);
   };
 
@@ -73,8 +78,28 @@ export default function AdminProdutos() {
   const removerUpload = () => setEdit({ ...edit, imagem_upload: "" });
   const removerLink = () => setEdit({ ...edit, imagem_link: "" });
 
+  const sincronizarCategorias = async (produtoId: string, categoriaIds: string[]) => {
+    // Garante "Todos" sempre presente
+    const todos = cats.find((c) => c.slug === "todos");
+    const finalIds = Array.from(new Set([...(categoriaIds || []), ...(todos ? [todos.id] : [])]));
+
+    // Remove vínculos atuais e recria
+    await supabase.from("produto_categorias").delete().eq("produto_id", produtoId);
+    if (finalIds.length > 0) {
+      await supabase.from("produto_categorias").insert(
+        finalIds.map((cid) => ({ produto_id: produtoId, categoria_id: cid }))
+      );
+    }
+  };
+
   const salvar = async () => {
     if (!edit.nome) return toast.error("Nome obrigatório");
+    const todos = cats.find((c) => c.slug === "todos");
+    const userSelecionou = (edit.categoria_ids || []).filter((id: string) => id !== todos?.id);
+    if (cats.length > 1 && userSelecionou.length === 0) {
+      return toast.error("Selecione ao menos uma categoria além de 'Todos'");
+    }
+
     const imagem_url = edit.imagem_upload || edit.imagem_link || null;
     const cores = (edit.cores_texto || "")
       .split(",")
@@ -82,13 +107,24 @@ export default function AdminProdutos() {
       .filter(Boolean);
     const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
+    delete payload.produto_categorias;
     delete payload.imagem_upload;
     delete payload.imagem_link;
     delete payload.cores_texto;
-    const { error } = edit.id
-      ? await supabase.from("produtos").update(payload).eq("id", edit.id)
-      : await supabase.from("produtos").insert(payload);
-    if (error) return toast.error(error.message);
+    delete payload.categoria_ids;
+    delete payload.categoria_id; // legacy: ignorado
+
+    let produtoId = edit.id;
+    if (produtoId) {
+      const { error } = await supabase.from("produtos").update(payload).eq("id", produtoId);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data, error } = await supabase.from("produtos").insert(payload).select("id").single();
+      if (error) return toast.error(error.message);
+      produtoId = data.id;
+    }
+
+    await sincronizarCategorias(produtoId, edit.categoria_ids || []);
     toast.success("Salvo");
     setOpen(false); carregar();
   };
