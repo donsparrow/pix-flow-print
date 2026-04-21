@@ -60,7 +60,7 @@ export function Hero() {
           </div>
 
           <div className="flex gap-8 pt-4">
-            <Stat n="500+" label="Peças impressas" />
+            <Stat n="50+" label="Peças impressas" />
             <Stat n="100%" label="Feito à mão" />
             <Stat n="48h" label="Pronto pra retirar" />
           </div>

@@ -20,7 +20,7 @@ export function Footer() {
             </div>
           </div>
           <p className="text-sm opacity-70 leading-relaxed">
-            Loja artesanal de impressões 3D. Qualidade, capricho e atendimento humano em cada peça.
+            Da minha família para a sua
           </p>
         </div>
 
@@ -30,7 +30,7 @@ export function Footer() {
             <li><Link to="/" className="hover:opacity-100">Início</Link></li>
             <li><Link to="/produtos" className="hover:opacity-100">Produtos</Link></li>
             <li><Link to="/categorias" className="hover:opacity-100">Categorias</Link></li>
-            <li><Link to="/pedido" className="hover:opacity-100">Consultar pedido</Link></li>
+            <li><Link to="/pedido" className="hover:opacity-100">Consultar Pedido</Link></li>
           </ul>
         </div>
 
