@@ -92,15 +92,30 @@ export default function AdminPedidos() {
             <>
               <DialogHeader><DialogTitle className="font-display">{sel.codigo}</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <div>
-                  <div className="text-xs font-bold uppercase text-muted-foreground mb-1">Status</div>
-                  <Select value={sel.status} onValueChange={(v) => updateStatus(sel.id, v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="text-xs font-bold uppercase text-muted-foreground mb-1">Status</div>
+                    <Select value={sel.status} onValueChange={(v) => updateStatus(sel.id, v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {sel.status === "cancelado" ? (
+                    <Button variant="outline" onClick={() => updateStatus(sel.id, "analise_pagamento")}>
+                      <RotateCcw className="h-4 w-4 mr-1" />Reativar pedido
+                    </Button>
+                  ) : (
+                    <CancelarBotao onConfirm={() => updateStatus(sel.id, "cancelado")} codigo={sel.codigo} />
+                  )}
                 </div>
+                {sel.status === "cancelado" && (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm">
+                    <strong className="text-destructive">Pedido cancelado.</strong>{" "}
+                    Não é contabilizado em faturamento, lucro ou itens vendidos.
+                  </div>
+                )}
                 <div className="text-sm space-y-1">
                   <div><strong>Cliente:</strong> {sel.cliente_nome} · {sel.cliente_telefone}</div>
                   {sel.cliente_email && <div><strong>Email:</strong> {sel.cliente_email}</div>}
