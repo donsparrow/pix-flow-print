@@ -282,30 +282,57 @@ export default function AdminProdutos() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">A categoria <strong>Todos</strong> é aplicada automaticamente a todos os produtos.</p>
               </Field>
-              <Field label="Imagem do produto">
+              <Field label="Imagens do produto (galeria)">
                 <div className="space-y-3 border rounded-xl p-3 bg-muted/30">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase">Upload (prioridade)</span>
-                      {edit.imagem_upload && <Button type="button" variant="ghost" size="sm" onClick={removerUpload} className="h-7 text-destructive"><Trash2 className="h-3 w-3 mr-1" />Remover</Button>}
-                    </div>
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <input type="file" accept="image/jpeg,image/png,image/webp" id="img-up" className="hidden" onChange={(e) => e.target.files && uploadImg(e.target.files[0])} />
-                      <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>
-                        {edit.imagem_upload ? "Substituir arquivo" : "Selecionar arquivo"}
-                      </Button>
-                      <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB</span>
-                    </div>
-                    {edit.imagem_upload && <img src={edit.imagem_upload} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview do upload" />}
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <input type="file" accept="image/jpeg,image/png,image/webp" id="img-up" multiple className="hidden" onChange={(e) => e.target.files && e.target.files.length > 0 && uploadImg(e.target.files)} />
+                    <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>
+                      <Plus className="h-3 w-3 mr-1" /> Adicionar imagens
+                    </Button>
+                    <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB cada · vários arquivos</span>
                   </div>
 
-                  <div className="border-t pt-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase">URL externa {edit.imagem_upload && <span className="text-muted-foreground normal-case font-normal">(ignorada — upload tem prioridade)</span>}</span>
-                      {edit.imagem_link && <Button type="button" variant="ghost" size="sm" onClick={removerLink} className="h-7 text-destructive"><Trash2 className="h-3 w-3 mr-1" />Limpar</Button>}
+                  {(edit.imagens || []).length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {(edit.imagens as string[]).map((url, idx) => (
+                        <div key={`${url}-${idx}`} className={`relative group rounded-lg overflow-hidden border-2 ${idx === 0 ? "border-primary" : "border-border"}`}>
+                          <img src={url} alt={`Imagem ${idx + 1}`} loading="lazy" className="w-full aspect-square object-cover" />
+                          {idx === 0 && (
+                            <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase rounded-full px-2 py-0.5 flex items-center gap-1">
+                              <Star className="h-2.5 w-2.5 fill-current" /> Capa
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                            <div className="flex gap-1">
+                              <button type="button" onClick={() => moverImagem(idx, -1)} disabled={idx === 0} className="bg-background text-foreground rounded p-1 disabled:opacity-30" aria-label="Mover para trás">
+                                <ChevronUp className="h-3 w-3 -rotate-90" />
+                              </button>
+                              <button type="button" onClick={() => moverImagem(idx, 1)} disabled={idx === (edit.imagens || []).length - 1} className="bg-background text-foreground rounded p-1 disabled:opacity-30" aria-label="Mover para frente">
+                                <ChevronDown className="h-3 w-3 -rotate-90" />
+                              </button>
+                            </div>
+                            {idx !== 0 && (
+                              <button type="button" onClick={() => definirCapa(idx)} className="bg-primary text-primary-foreground rounded px-2 py-0.5 text-[10px] font-bold uppercase flex items-center gap-1">
+                                <Star className="h-2.5 w-2.5" /> Capa
+                              </button>
+                            )}
+                            <button type="button" onClick={() => removerImagem(idx)} className="bg-destructive text-destructive-foreground rounded px-2 py-0.5 text-[10px] font-bold uppercase flex items-center gap-1">
+                              <X className="h-2.5 w-2.5" /> Remover
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <Input value={edit.imagem_link || ""} onChange={(e) => setEdit({ ...edit, imagem_link: e.target.value })} placeholder="https://exemplo.com/imagem.jpg" />
-                    {edit.imagem_link && !edit.imagem_upload && <img src={edit.imagem_link} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview da URL" />}
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic py-4 text-center">Nenhuma imagem adicionada. A primeira será usada como capa.</div>
+                  )}
+
+                  <div className="border-t pt-3 space-y-2">
+                    <span className="text-xs font-bold uppercase">Adicionar via URL externa</span>
+                    <div className="flex gap-2">
+                      <Input value={edit.imagem_link || ""} onChange={(e) => setEdit({ ...edit, imagem_link: e.target.value })} placeholder="https://exemplo.com/imagem.jpg" />
+                      <Button type="button" variant="outline" size="sm" onClick={adicionarLink}>Adicionar</Button>
+                    </div>
                   </div>
                 </div>
               </Field>
