@@ -202,6 +202,12 @@ export default function PedidoDetalhe() {
             </div>
             <div className="border-t pt-3 space-y-1 text-sm">
               <div className="flex justify-between"><span>Subtotal</span><span>{brl(Number(pedido.valor_produtos))}</span></div>
+              {Number(pedido.cupom_desconto) > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Cupom <span className="font-mono font-bold">{pedido.cupom_codigo}</span></span>
+                  <span>− {brl(Number(pedido.cupom_desconto))}</span>
+                </div>
+              )}
               <div className="flex justify-between"><span>Frete</span><span>{brl(Number(pedido.valor_frete))}</span></div>
               <div className="flex justify-between font-display font-bold text-xl pt-2 border-t">
                 <span>Total</span><span className="text-primary">{brl(Number(pedido.valor_total))}</span>
