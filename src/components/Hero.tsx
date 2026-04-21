@@ -4,9 +4,22 @@ import { Sparkles, ArrowRight, Play } from "lucide-react";
 import { useConfig } from "@/hooks/useConfig";
 import logo from "@/assets/logo-jrtl.png";
 
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+function getVimeoId(url: string): string | null {
+  const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return m ? m[1] : null;
+}
+
 export function Hero() {
   const { config } = useConfig();
-  const videoUrl = config.hero_video_url;
+  const uploadUrl = config.hero_video_upload?.trim();
+  const externalUrl = config.hero_video_url?.trim();
+  const videoSrc = uploadUrl || externalUrl || "";
+  const ytId = !uploadUrl && externalUrl ? getYouTubeId(externalUrl) : null;
+  const vimeoId = !uploadUrl && externalUrl ? getVimeoId(externalUrl) : null;
 
   return (
     <section className="relative overflow-hidden bg-gradient-hero">
