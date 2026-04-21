@@ -56,6 +56,13 @@ export default function PedidoDetalhe() {
     `Aguardo confirmação 😊`
   );
 
+  const mensagemJaPaguei = encodeURIComponent(
+    `Olá! Já efetuei o pagamento do pedido *${pedido.codigo}* 💸\n\n` +
+    `*Cliente:* ${pedido.cliente_nome}\n` +
+    `*Valor:* ${brl(Number(pedido.valor_total))}\n\n` +
+    `Vou enviar o comprovante em seguida. Obrigado!`
+  );
+
   const uploadComprovante = async (file: File) => {
     if (!file) return;
     setUploading(true);
@@ -151,6 +158,11 @@ export default function PedidoDetalhe() {
             </div>
             <div className="flex flex-col gap-2">
               <Button asChild className="w-full bg-success hover:bg-success/90 text-success-foreground font-bold rounded-full">
+                <a href={`https://wa.me/${wpp}?text=${mensagemJaPaguei}`} target="_blank" rel="noreferrer">
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Já paguei
+                </a>
+              </Button>
+              <Button asChild variant="outline" className="w-full font-bold rounded-full">
                 <a href={`https://wa.me/${wpp}?text=${mensagemWpp}`} target="_blank" rel="noreferrer">
                   <MessageCircle className="h-4 w-4 mr-2" /> Enviar pedido no WhatsApp
                 </a>
