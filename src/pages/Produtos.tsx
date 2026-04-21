@@ -24,13 +24,18 @@ export default function Produtos() {
     (async () => {
       let query = supabase
         .from("produtos")
-        .select("id, nome, slug, preco, estoque, imagem_url, descricao, categoria_id, categorias!inner(slug)")
-        .eq("ativo", true)
-        .order("ordem", { ascending: true })
-        .order("created_at", { ascending: false });
+        .select("id, nome, slug, preco, estoque, imagem_url, descricao, ordem, categoria_id, categorias!inner(slug)")
+        .eq("ativo", true);
       if (cat) query = query.eq("categorias.slug", cat);
       const { data } = await query;
       let list = (data || []) as any[];
+      // Ordenação: produtos com ordem > 0 primeiro (crescente); ordem = 0/null vão por último (mais recentes primeiro)
+      list.sort((a, b) => {
+        const ao = a.ordem && a.ordem > 0 ? a.ordem : Number.POSITIVE_INFINITY;
+        const bo = b.ordem && b.ordem > 0 ? b.ordem : Number.POSITIVE_INFINITY;
+        if (ao !== bo) return ao - bo;
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
       if (q) list = list.filter((p) => p.nome.toLowerCase().includes(q.toLowerCase()));
       setProdutos(list);
     })();
