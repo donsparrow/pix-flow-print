@@ -9,6 +9,40 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Check, X, Lock } from "lucide-react";
 import { HeroVideoEditor } from "@/components/admin/HeroVideoEditor";
 import { InstagramEmbedEditor } from "@/components/admin/InstagramEmbedEditor";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
+
+function EmojiSelector({ value, onChange }: { value: string; onChange: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex items-center gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="outline" className="h-14 w-14 text-3xl p-0" aria-label="Escolher emoji">
+            {value || "😀"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-auto border-0" align="start">
+          <EmojiPicker
+            onEmojiClick={(e) => { onChange(e.emoji); setOpen(false); }}
+            emojiStyle={EmojiStyle.NATIVE}
+            theme={Theme.AUTO}
+            searchPlaceholder="Buscar emoji..."
+            width={340}
+            height={400}
+            previewConfig={{ showPreview: false }}
+            skinTonesDisabled
+          />
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => onChange("")}>
+          Remover
+        </Button>
+      )}
+    </div>
+  );
+}
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -201,13 +235,12 @@ export function AdminCategorias() {
                   </div>
                   <div>
                     <Label className="text-xs font-bold">Emoji (fallback)</Label>
-                    <Input
-                      value={editForm.emoji}
-                      onChange={(e) => setEditForm({ ...editForm, emoji: e.target.value })}
-                      placeholder="🦸"
-                      maxLength={4}
-                      className="w-24 text-2xl"
-                    />
+                    <div className="mt-1">
+                      <EmojiSelector
+                        value={editForm.emoji}
+                        onChange={(emoji) => setEditForm({ ...editForm, emoji })}
+                      />
+                    </div>
                     <p className="text-[10px] text-muted-foreground mt-1">Usado quando não houver imagem.</p>
                   </div>
                   <div className="flex justify-end gap-2 pt-2 border-t">
