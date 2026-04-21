@@ -103,6 +103,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cupons: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          limite_uso: number | null
+          tipo: Database["public"]["Enums"]["tipo_desconto"]
+          updated_at: string
+          usos: number
+          validade: string | null
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          limite_uso?: number | null
+          tipo: Database["public"]["Enums"]["tipo_desconto"]
+          updated_at?: string
+          usos?: number
+          validade?: string | null
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          limite_uso?: number | null
+          tipo?: Database["public"]["Enums"]["tipo_desconto"]
+          updated_at?: string
+          usos?: number
+          validade?: string | null
+          valor?: number
+        }
+        Relationships: []
+      }
       depoimentos: {
         Row: {
           ativo: boolean
@@ -207,6 +246,8 @@ export type Database = {
           cliente_telefone: string
           codigo: string
           created_at: string
+          cupom_codigo: string | null
+          cupom_desconto: number
           id: string
           metodo_frete: Database["public"]["Enums"]["shipping_method"]
           observacoes: string | null
@@ -229,6 +270,8 @@ export type Database = {
           cliente_telefone: string
           codigo: string
           created_at?: string
+          cupom_codigo?: string | null
+          cupom_desconto?: number
           id?: string
           metodo_frete: Database["public"]["Enums"]["shipping_method"]
           observacoes?: string | null
@@ -251,6 +294,8 @@ export type Database = {
           cliente_telefone?: string
           codigo?: string
           created_at?: string
+          cupom_codigo?: string | null
+          cupom_desconto?: number
           id?: string
           metodo_frete?: Database["public"]["Enums"]["shipping_method"]
           observacoes?: string | null
@@ -377,19 +422,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      criar_pedido: {
-        Args: {
-          _cliente: Json
-          _itens: Json
-          _metodo_frete: Database["public"]["Enums"]["shipping_method"]
-          _observacoes?: string
-          _valor_frete: number
-        }
-        Returns: {
-          codigo: string
-          pedido_id: string
-        }[]
-      }
+      criar_pedido:
+        | {
+            Args: {
+              _cliente: Json
+              _itens: Json
+              _metodo_frete: Database["public"]["Enums"]["shipping_method"]
+              _observacoes?: string
+              _valor_frete: number
+            }
+            Returns: {
+              codigo: string
+              pedido_id: string
+            }[]
+          }
+        | {
+            Args: {
+              _cliente: Json
+              _cupom_codigo?: string
+              _itens: Json
+              _metodo_frete: Database["public"]["Enums"]["shipping_method"]
+              _observacoes?: string
+              _valor_frete: number
+            }
+            Returns: {
+              codigo: string
+              pedido_id: string
+            }[]
+          }
       gerar_codigo_pedido: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -397,6 +457,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validar_cupom: {
+        Args: { _codigo: string; _subtotal: number }
+        Returns: {
+          codigo: string
+          desconto: number
+          mensagem: string
+          valido: boolean
+        }[]
       }
     }
     Enums: {
@@ -409,6 +478,7 @@ export type Database = {
         | "entregue"
         | "cancelado"
       shipping_method: "grande_vitoria" | "demais_regioes" | "retirada"
+      tipo_desconto: "percentual" | "fixo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -546,6 +616,7 @@ export const Constants = {
         "cancelado",
       ],
       shipping_method: ["grande_vitoria", "demais_regioes", "retirada"],
+      tipo_desconto: ["percentual", "fixo"],
     },
   },
 } as const

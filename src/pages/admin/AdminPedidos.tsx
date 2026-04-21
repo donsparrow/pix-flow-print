@@ -90,6 +90,18 @@ export default function AdminPedidos() {
                       <span>{brl(Number(i.subtotal))}</span>
                     </div>
                   ))}
+                  <div className="flex justify-between text-sm pt-2 mt-2 border-t">
+                    <span>Subtotal</span><span>{brl(Number(sel.valor_produtos))}</span>
+                  </div>
+                  {Number(sel.cupom_desconto) > 0 && (
+                    <div className="flex justify-between text-sm text-success">
+                      <span>Cupom <span className="font-mono font-bold">{sel.cupom_codigo}</span></span>
+                      <span>− {brl(Number(sel.cupom_desconto))}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span>Frete</span><span>{brl(Number(sel.valor_frete))}</span>
+                  </div>
                   <div className="flex justify-between font-bold border-t pt-2 mt-2">
                     <span>Total</span><span className="text-primary">{brl(Number(sel.valor_total))}</span>
                   </div>
