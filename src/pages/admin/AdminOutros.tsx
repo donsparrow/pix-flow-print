@@ -9,6 +9,40 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Check, X, Lock } from "lucide-react";
 import { HeroVideoEditor } from "@/components/admin/HeroVideoEditor";
 import { InstagramEmbedEditor } from "@/components/admin/InstagramEmbedEditor";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
+
+function EmojiSelector({ value, onChange }: { value: string; onChange: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex items-center gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="outline" className="h-14 w-14 text-3xl p-0" aria-label="Escolher emoji">
+            {value || "😀"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-auto border-0" align="start">
+          <EmojiPicker
+            onEmojiClick={(e) => { onChange(e.emoji); setOpen(false); }}
+            emojiStyle={EmojiStyle.NATIVE}
+            theme={Theme.AUTO}
+            searchPlaceholder="Buscar emoji..."
+            width={340}
+            height={400}
+            previewConfig={{ showPreview: false }}
+            skinTonesDisabled
+          />
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => onChange("")}>
+          Remover
+        </Button>
+      )}
+    </div>
+  );
+}
 
 const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
