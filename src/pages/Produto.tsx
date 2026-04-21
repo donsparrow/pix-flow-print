@@ -13,19 +13,21 @@ export default function Produto() {
   const [p, setP] = useState<any>(null);
   const [qty, setQty] = useState(1);
   const [cor, setCor] = useState<string | null>(null);
+  const [imgAtiva, setImgAtiva] = useState(0);
   const { add } = useCart();
 
   useEffect(() => {
     if (!slug) return;
     supabase
       .from("produtos")
-      .select("*, categorias(nome, slug)")
+      .select("*, categorias(nome, slug), produto_categorias(categorias(nome, slug))")
       .eq("slug", slug)
       .eq("ativo", true)
       .maybeSingle()
       .then(({ data }) => {
         setP(data);
         setCor(null);
+        setImgAtiva(0);
       });
   }, [slug]);
 
@@ -62,9 +64,35 @@ export default function Produto() {
         </Link>
 
         <div className="grid md:grid-cols-2 gap-10">
-          <div className="aspect-square rounded-3xl overflow-hidden bg-muted shadow-md">
-            {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-full h-full object-cover" />}
-          </div>
+          {(() => {
+            const extras = Array.isArray(p.imagens_extras) ? p.imagens_extras.filter((u: any) => typeof u === "string" && u) : [];
+            const galeria: string[] = [];
+            if (p.imagem_url) galeria.push(p.imagem_url);
+            for (const u of extras) if (!galeria.includes(u)) galeria.push(u);
+            const ativa = galeria[imgAtiva] || galeria[0] || null;
+            return (
+              <div className="space-y-3">
+                <div className="aspect-square rounded-3xl overflow-hidden bg-muted shadow-md">
+                  {ativa && <img src={ativa} alt={p.nome} className="w-full h-full object-cover" />}
+                </div>
+                {galeria.length > 1 && (
+                  <div className="grid grid-cols-5 gap-2">
+                    {galeria.map((url, idx) => (
+                      <button
+                        key={`${url}-${idx}`}
+                        type="button"
+                        onClick={() => setImgAtiva(idx)}
+                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${idx === imgAtiva ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
+                        aria-label={`Ver imagem ${idx + 1}`}
+                      >
+                        <img src={url} alt={`${p.nome} ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="space-y-5">
             {(() => {

@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { brl } from "@/lib/format";
-import { Plus, Pencil, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, ChevronUp, ChevronDown, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -51,46 +51,72 @@ export default function AdminProdutos() {
   }, []);
 
   const novo = () => {
-    setEdit({ nome: "", slug: "", descricao: "", preco: 0, lucro: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
+    setEdit({ nome: "", slug: "", descricao: "", preco: 0, lucro: 0, peso_g: 0, dimensoes: "", estoque: 0, imagens: [], imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
     setOpen(true);
   };
   const abrir = (p: any) => {
-    const isUpload = !!p.imagem_url && p.imagem_url.includes("/storage/v1/object/public/produtos/");
     const cores_texto = Array.isArray(p.cores) ? p.cores.join(", ") : "";
     const categoria_ids = (p.produto_categorias || []).map((pc: any) => pc.categoria_id);
-    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || ""), cores_texto, categoria_ids });
+    const extras = Array.isArray(p.imagens_extras) ? p.imagens_extras.filter((u: any) => typeof u === "string" && u) : [];
+    const imagens: string[] = [];
+    if (p.imagem_url) imagens.push(p.imagem_url);
+    for (const u of extras) if (!imagens.includes(u)) imagens.push(u);
+    setEdit({ ...p, imagens, imagem_link: "", cores_texto, categoria_ids });
     setOpen(true);
   };
 
-  const uploadImg = async (f: File) => {
+  const uploadImg = async (files: FileList) => {
     const tiposOk = ["image/jpeg", "image/png", "image/webp"];
-    if (!tiposOk.includes(f.type)) return toast.error("Use JPG, PNG ou WEBP");
-    if (f.size > 5 * 1024 * 1024) return toast.error("Imagem deve ter até 5MB");
-    const ext = f.name.split(".").pop();
-    const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("produtos").upload(path, f, { cacheControl: "31536000", contentType: f.type });
-    if (error) { toast.error(error.message); return; }
-    const { data: { publicUrl } } = supabase.storage.from("produtos").getPublicUrl(path);
-    setEdit({ ...edit, imagem_upload: publicUrl });
-    toast.success("Imagem enviada");
+    const novas: string[] = [];
+    for (const f of Array.from(files)) {
+      if (!tiposOk.includes(f.type)) { toast.error(`${f.name}: use JPG, PNG ou WEBP`); continue; }
+      if (f.size > 5 * 1024 * 1024) { toast.error(`${f.name}: até 5MB`); continue; }
+      const ext = f.name.split(".").pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("produtos").upload(path, f, { cacheControl: "31536000", contentType: f.type });
+      if (error) { toast.error(error.message); continue; }
+      const { data: { publicUrl } } = supabase.storage.from("produtos").getPublicUrl(path);
+      novas.push(publicUrl);
+    }
+    if (novas.length > 0) {
+      setEdit((cur: any) => ({ ...cur, imagens: [...(cur.imagens || []), ...novas] }));
+      toast.success(`${novas.length} imagem(ns) enviada(s)`);
+    }
   };
 
-  const removerUpload = () => setEdit({ ...edit, imagem_upload: "" });
-  const removerLink = () => setEdit({ ...edit, imagem_link: "" });
+  const adicionarLink = () => {
+    const url = (edit.imagem_link || "").trim();
+    if (!url) return;
+    setEdit({ ...edit, imagens: [...(edit.imagens || []), url], imagem_link: "" });
+  };
+  const removerImagem = (idx: number) => {
+    const arr = [...(edit.imagens || [])];
+    arr.splice(idx, 1);
+    setEdit({ ...edit, imagens: arr });
+  };
+  const definirCapa = (idx: number) => {
+    if (idx === 0) return;
+    const arr = [...(edit.imagens || [])];
+    const [item] = arr.splice(idx, 1);
+    arr.unshift(item);
+    setEdit({ ...edit, imagens: arr });
+  };
+  const moverImagem = (idx: number, dir: -1 | 1) => {
+    const arr = [...(edit.imagens || [])];
+    const novo = idx + dir;
+    if (novo < 0 || novo >= arr.length) return;
+    [arr[idx], arr[novo]] = [arr[novo], arr[idx]];
+    setEdit({ ...edit, imagens: arr });
+  };
 
   const sincronizarCategorias = async (produtoId: string, categoriaIds: string[]) => {
-    // Garante "Todos" sempre presente
     const todos = cats.find((c) => c.slug === "todos");
     const finalIds = Array.from(new Set([...(categoriaIds || []), ...(todos ? [todos.id] : [])]));
-
-    // Remove vínculos que não estão mais selecionados
     await supabase
       .from("produto_categorias")
       .delete()
       .eq("produto_id", produtoId)
       .not("categoria_id", "in", `(${finalIds.join(",")})`);
-
-    // Insere novos vínculos ignorando duplicatas (trigger pode ter recriado "Todos")
     if (finalIds.length > 0) {
       const { error } = await supabase
         .from("produto_categorias")
@@ -110,19 +136,22 @@ export default function AdminProdutos() {
       return toast.error("Selecione ao menos uma categoria além de 'Todos'");
     }
 
-    const imagem_url = edit.imagem_upload || edit.imagem_link || null;
+    const imagens: string[] = (edit.imagens || []).filter((u: string) => typeof u === "string" && u.trim());
+    const imagem_url = imagens[0] || null;
+    const imagens_extras = imagens.slice(1);
+
     const cores = (edit.cores_texto || "")
       .split(",")
       .map((c: string) => c.trim())
       .filter(Boolean);
-    const payload: any = { ...edit, imagem_url, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), lucro: Number(edit.lucro || 0), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
+    const payload: any = { ...edit, imagem_url, imagens_extras, cores, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), lucro: Number(edit.lucro || 0), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
     delete payload.produto_categorias;
-    delete payload.imagem_upload;
+    delete payload.imagens;
     delete payload.imagem_link;
     delete payload.cores_texto;
     delete payload.categoria_ids;
-    delete payload.categoria_id; // legacy: ignorado
+    delete payload.categoria_id;
 
     let produtoId = edit.id;
     if (produtoId) {
@@ -253,30 +282,57 @@ export default function AdminProdutos() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">A categoria <strong>Todos</strong> é aplicada automaticamente a todos os produtos.</p>
               </Field>
-              <Field label="Imagem do produto">
+              <Field label="Imagens do produto (galeria)">
                 <div className="space-y-3 border rounded-xl p-3 bg-muted/30">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase">Upload (prioridade)</span>
-                      {edit.imagem_upload && <Button type="button" variant="ghost" size="sm" onClick={removerUpload} className="h-7 text-destructive"><Trash2 className="h-3 w-3 mr-1" />Remover</Button>}
-                    </div>
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <input type="file" accept="image/jpeg,image/png,image/webp" id="img-up" className="hidden" onChange={(e) => e.target.files && uploadImg(e.target.files[0])} />
-                      <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>
-                        {edit.imagem_upload ? "Substituir arquivo" : "Selecionar arquivo"}
-                      </Button>
-                      <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB</span>
-                    </div>
-                    {edit.imagem_upload && <img src={edit.imagem_upload} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview do upload" />}
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <input type="file" accept="image/jpeg,image/png,image/webp" id="img-up" multiple className="hidden" onChange={(e) => e.target.files && e.target.files.length > 0 && uploadImg(e.target.files)} />
+                    <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>
+                      <Plus className="h-3 w-3 mr-1" /> Adicionar imagens
+                    </Button>
+                    <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB cada · vários arquivos</span>
                   </div>
 
-                  <div className="border-t pt-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase">URL externa {edit.imagem_upload && <span className="text-muted-foreground normal-case font-normal">(ignorada — upload tem prioridade)</span>}</span>
-                      {edit.imagem_link && <Button type="button" variant="ghost" size="sm" onClick={removerLink} className="h-7 text-destructive"><Trash2 className="h-3 w-3 mr-1" />Limpar</Button>}
+                  {(edit.imagens || []).length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {(edit.imagens as string[]).map((url, idx) => (
+                        <div key={`${url}-${idx}`} className={`relative group rounded-lg overflow-hidden border-2 ${idx === 0 ? "border-primary" : "border-border"}`}>
+                          <img src={url} alt={`Imagem ${idx + 1}`} loading="lazy" className="w-full aspect-square object-cover" />
+                          {idx === 0 && (
+                            <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase rounded-full px-2 py-0.5 flex items-center gap-1">
+                              <Star className="h-2.5 w-2.5 fill-current" /> Capa
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                            <div className="flex gap-1">
+                              <button type="button" onClick={() => moverImagem(idx, -1)} disabled={idx === 0} className="bg-background text-foreground rounded p-1 disabled:opacity-30" aria-label="Mover para trás">
+                                <ChevronUp className="h-3 w-3 -rotate-90" />
+                              </button>
+                              <button type="button" onClick={() => moverImagem(idx, 1)} disabled={idx === (edit.imagens || []).length - 1} className="bg-background text-foreground rounded p-1 disabled:opacity-30" aria-label="Mover para frente">
+                                <ChevronDown className="h-3 w-3 -rotate-90" />
+                              </button>
+                            </div>
+                            {idx !== 0 && (
+                              <button type="button" onClick={() => definirCapa(idx)} className="bg-primary text-primary-foreground rounded px-2 py-0.5 text-[10px] font-bold uppercase flex items-center gap-1">
+                                <Star className="h-2.5 w-2.5" /> Capa
+                              </button>
+                            )}
+                            <button type="button" onClick={() => removerImagem(idx)} className="bg-destructive text-destructive-foreground rounded px-2 py-0.5 text-[10px] font-bold uppercase flex items-center gap-1">
+                              <X className="h-2.5 w-2.5" /> Remover
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <Input value={edit.imagem_link || ""} onChange={(e) => setEdit({ ...edit, imagem_link: e.target.value })} placeholder="https://exemplo.com/imagem.jpg" />
-                    {edit.imagem_link && !edit.imagem_upload && <img src={edit.imagem_link} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview da URL" />}
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic py-4 text-center">Nenhuma imagem adicionada. A primeira será usada como capa.</div>
+                  )}
+
+                  <div className="border-t pt-3 space-y-2">
+                    <span className="text-xs font-bold uppercase">Adicionar via URL externa</span>
+                    <div className="flex gap-2">
+                      <Input value={edit.imagem_link || ""} onChange={(e) => setEdit({ ...edit, imagem_link: e.target.value })} placeholder="https://exemplo.com/imagem.jpg" />
+                      <Button type="button" variant="outline" size="sm" onClick={adicionarLink}>Adicionar</Button>
+                    </div>
                   </div>
                 </div>
               </Field>
