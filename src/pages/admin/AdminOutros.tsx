@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ const slugify = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300
 export function AdminCategorias() {
   const [list, setList] = useState<any[]>([]);
   const [nome, setNome] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ nome: string; slug: string }>({ nome: "", slug: "" });
 
@@ -23,8 +24,13 @@ export function AdminCategorias() {
 
   const [adicionando, setAdicionando] = useState(false);
   const add = async () => {
-    const nomeLimpo = nome.trim();
-    if (!nomeLimpo) return toast.error("Informe o nome da categoria");
+    // pega valor do state OU diretamente do DOM (fallback robusto)
+    const raw = (nome || inputRef.current?.value || "").toString();
+    const nomeLimpo = raw.trim();
+    if (!nomeLimpo) {
+      inputRef.current?.focus();
+      return toast.error("Informe o nome da categoria");
+    }
     const slug = slugify(nomeLimpo);
     if (!slug) return toast.error("Nome inválido");
     if (list.some((c) => c.slug === slug || c.nome.toLowerCase() === nomeLimpo.toLowerCase())) {
@@ -35,6 +41,7 @@ export function AdminCategorias() {
     setAdicionando(false);
     if (error) return toast.error(error.message);
     setNome("");
+    if (inputRef.current) inputRef.current.value = "";
     toast.success("Categoria criada com sucesso");
     carregar();
   };
@@ -69,18 +76,19 @@ export function AdminCategorias() {
         <p className="text-sm text-muted-foreground mt-1">A categoria <strong>Todos</strong> é padrão do sistema — todo produto pertence a ela automaticamente.</p>
       </div>
       <form
-        className="flex gap-2"
-        onSubmit={(e) => { e.preventDefault(); add(); }}
+        className="flex gap-2 items-stretch relative z-10"
+        onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); add(); }}
+        autoComplete="off"
       >
-        <Input
+        <input
+          ref={inputRef}
           type="text"
           name="nome-categoria"
           autoComplete="off"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="Nome da nova categoria"
-          disabled={adicionando}
-          className="flex-1"
+          className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button type="submit" disabled={adicionando}>
           <Plus className="h-4 w-4 mr-1" />{adicionando ? "Adicionando..." : "Adicionar"}
