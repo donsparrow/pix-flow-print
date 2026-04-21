@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, NavLink, Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-jrtl.png";
 import { LayoutDashboard, Package, ShoppingCart, Tag, Star, Settings, LogOut, Store } from "lucide-react";
@@ -16,6 +17,7 @@ const links = [
 
 export default function AdminLayout() {
   const { user, isAdmin, loading, signOut } = useAuth();
+  useIdleLogout(2 * 60 * 60 * 1000); // logout automático após 2h de inatividade
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   if (!user) return <Navigate to="/auth" replace />;
