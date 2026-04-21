@@ -69,8 +69,8 @@ export function AdminCategorias() {
         <p className="text-sm text-muted-foreground mt-1">A categoria <strong>Todos</strong> é padrão do sistema — todo produto pertence a ela automaticamente.</p>
       </div>
       <div className="flex gap-2">
-        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da nova categoria" onKeyDown={(e) => e.key === "Enter" && add()} />
-        <Button onClick={add}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da nova categoria" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Button type="button" onClick={add} disabled={adicionando || !nome.trim()}><Plus className="h-4 w-4 mr-1" />{adicionando ? "Adicionando..." : "Adicionar"}</Button>
       </div>
       <div className="space-y-2">
         {list.map((c) => {
