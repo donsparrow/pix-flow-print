@@ -49,22 +49,38 @@ export default function AdminProdutos() {
     supabase.from("categorias").select("id, nome").then(({ data }) => setCats(data || []));
   }, []);
 
-  const novo = () => { setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_url: "", categoria_id: null, ativo: true, destaque: false }); setOpen(true); };
-  const abrir = (p: any) => { setEdit({ ...p }); setOpen(true); };
+  const novo = () => { setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_id: null, ativo: true, destaque: false }); setOpen(true); };
+  const abrir = (p: any) => {
+    // Heurística: se a URL aponta para o nosso bucket, tratamos como upload; caso contrário, link externo.
+    const isUpload = !!p.imagem_url && p.imagem_url.includes("/storage/v1/object/public/produtos/");
+    setEdit({ ...p, imagem_upload: isUpload ? p.imagem_url : "", imagem_link: isUpload ? "" : (p.imagem_url || "") });
+    setOpen(true);
+  };
 
   const uploadImg = async (f: File) => {
+    const tiposOk = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposOk.includes(f.type)) return toast.error("Use JPG, PNG ou WEBP");
+    if (f.size > 5 * 1024 * 1024) return toast.error("Imagem deve ter até 5MB");
     const ext = f.name.split(".").pop();
     const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("produtos").upload(path, f);
+    const { error } = await supabase.storage.from("produtos").upload(path, f, { cacheControl: "31536000", contentType: f.type });
     if (error) { toast.error(error.message); return; }
     const { data: { publicUrl } } = supabase.storage.from("produtos").getPublicUrl(path);
-    setEdit({ ...edit, imagem_url: publicUrl });
+    setEdit({ ...edit, imagem_upload: publicUrl });
+    toast.success("Imagem enviada");
   };
+
+  const removerUpload = () => setEdit({ ...edit, imagem_upload: "" });
+  const removerLink = () => setEdit({ ...edit, imagem_link: "" });
 
   const salvar = async () => {
     if (!edit.nome) return toast.error("Nome obrigatório");
-    const payload = { ...edit, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
+    // Upload tem prioridade sobre URL manual
+    const imagem_url = edit.imagem_upload || edit.imagem_link || null;
+    const payload: any = { ...edit, imagem_url, slug: edit.slug || slugify(edit.nome), preco: Number(edit.preco), peso_g: Number(edit.peso_g), estoque: Number(edit.estoque) };
     delete payload.categorias;
+    delete payload.imagem_upload;
+    delete payload.imagem_link;
     const { error } = edit.id
       ? await supabase.from("produtos").update(payload).eq("id", edit.id)
       : await supabase.from("produtos").insert(payload);
