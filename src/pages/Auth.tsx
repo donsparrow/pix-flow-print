@@ -43,9 +43,9 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <img src={logo} alt="JRTL 3D" className="h-16 w-16" />
+          <img src={logo} alt="JRTL STUDIO" className="h-16 w-16" />
           <div>
-            <div className="font-display text-2xl font-bold text-gradient-brand">JRTL 3D</div>
+            <div className="font-display text-2xl font-bold text-gradient-brand">JRTL STUDIO</div>
             <div className="text-xs text-muted-foreground font-semibold">Admin</div>
           </div>
         </Link>

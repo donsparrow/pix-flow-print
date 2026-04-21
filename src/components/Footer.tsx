@@ -13,9 +13,9 @@ export function Footer() {
       <div className="container py-14 grid md:grid-cols-3 gap-10">
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <img src={logo} alt="JRTL 3D" className="h-12 w-12" />
+            <img src={logo} alt="JRTL STUDIO" className="h-12 w-12" />
             <div>
-              <div className="font-display text-xl font-bold">JRTL 3D</div>
+              <div className="font-display text-xl font-bold">JRTL STUDIO</div>
               <div className="text-xs opacity-70">Impressões personalizadas</div>
             </div>
           </div>
@@ -60,7 +60,7 @@ export function Footer() {
       </div>
       <div className="border-t border-background/10">
         <div className="container py-5 text-xs opacity-60 flex flex-col md:flex-row justify-between gap-2">
-          <span>© {new Date().getFullYear()} JRTL 3D. Todos os direitos reservados.</span>
+          <span>© {new Date().getFullYear()} JRTL STUDIO. Todos os direitos reservados.</span>
           <Link to="/admin" className="hover:opacity-100">Área administrativa</Link>
         </div>
       </div>

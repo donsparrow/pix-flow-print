@@ -48,7 +48,7 @@ export default function PedidoDetalhe() {
   };
 
   const mensagemWpp = encodeURIComponent(
-    `Olá! Acabei de fazer um pedido na JRTL 3D.\n\n` +
+    `Olá! Acabei de fazer um pedido na JRTL STUDIO.\n\n` +
     `*Código:* ${pedido.codigo}\n` +
     `*Cliente:* ${pedido.cliente_nome}\n` +
     `*Total:* ${brl(Number(pedido.valor_total))}\n\n` +

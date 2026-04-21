@@ -35,9 +35,9 @@ export default function AdminLayout() {
     <div className="min-h-screen flex bg-muted/30">
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         <Link to="/" className="p-6 flex items-center gap-3 border-b">
-          <img src={logo} alt="JRTL 3D" className="h-10 w-10" />
+          <img src={logo} alt="JRTL STUDIO" className="h-10 w-10" />
           <div>
-            <div className="font-display text-lg font-bold text-gradient-brand leading-none">JRTL 3D</div>
+            <div className="font-display text-lg font-bold text-gradient-brand leading-none">JRTL STUDIO</div>
             <div className="text-xs text-muted-foreground">Painel Admin</div>
           </div>
         </Link>
