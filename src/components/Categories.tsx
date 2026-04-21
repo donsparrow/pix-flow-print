@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
-type Cat = { id: string; nome: string; slug: string; imagem_url: string | null };
+type Cat = { id: string; nome: string; slug: string; imagem_url: string | null; emoji: string | null };
 
 const fallbackEmojis: Record<string, string> = {
   "action-figures": "🦸",
@@ -10,6 +10,8 @@ const fallbackEmojis: Record<string, string> = {
   "utilidades": "🛠️",
   "personalizados": "✨",
   "geek-games": "🎮",
+  "brinquedos": "🧸",
+  "todos": "📦",
 };
 
 const colorClasses = [
@@ -27,10 +29,11 @@ export function Categories() {
     (async () => {
       const { data } = await supabase
         .from("categorias")
-        .select("id, nome, slug, imagem_url")
+        .select("id, nome, slug, imagem_url, emoji")
         .eq("ativo", true)
+        .neq("slug", "todos")
         .order("ordem");
-      setCats(data || []);
+      setCats((data as Cat[]) || []);
     })();
   }, []);
 
@@ -49,7 +52,16 @@ export function Categories() {
             to={`/produtos?categoria=${c.slug}`}
             className={`group relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br ${colorClasses[i % colorClasses.length]} p-6 flex flex-col justify-between hover:scale-105 transition-transform shadow-md hover:shadow-lg`}
           >
-            <div className="text-5xl">{fallbackEmojis[c.slug] || "📦"}</div>
+            {c.imagem_url ? (
+              <img
+                src={c.imagem_url}
+                alt={c.nome}
+                className="w-16 h-16 rounded-xl object-cover bg-white/20 backdrop-blur-sm shadow-md"
+                loading="lazy"
+              />
+            ) : (
+              <div className="text-5xl drop-shadow">{c.emoji || fallbackEmojis[c.slug] || "📦"}</div>
+            )}
             <div>
               <div className="font-display text-xl font-bold text-white drop-shadow">{c.nome}</div>
               <div className="text-white/80 text-xs font-semibold mt-1">Ver produtos →</div>
