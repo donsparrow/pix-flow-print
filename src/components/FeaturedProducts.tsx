@@ -12,13 +12,18 @@ export function FeaturedProducts() {
     (async () => {
       const { data } = await supabase
         .from("produtos")
-        .select("id, nome, slug, preco, estoque, imagem_url, descricao, destaque, created_at")
-        .eq("ativo", true)
-        .order("destaque", { ascending: false })
-        .order("ordem", { ascending: true })
-        .order("created_at", { ascending: false })
-        .limit(8);
-      setProdutos((data || []) as any);
+        .select("id, nome, slug, preco, estoque, imagem_url, descricao, destaque, ordem, created_at")
+        .eq("ativo", true);
+      const list = ((data || []) as any[]).sort((a, b) => {
+        // Destaques primeiro
+        if (!!b.destaque !== !!a.destaque) return b.destaque ? 1 : -1;
+        // Ordem crescente; 0/null vão por último
+        const ao = a.ordem && a.ordem > 0 ? a.ordem : Number.POSITIVE_INFINITY;
+        const bo = b.ordem && b.ordem > 0 ? b.ordem : Number.POSITIVE_INFINITY;
+        if (ao !== bo) return ao - bo;
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }).slice(0, 8);
+      setProdutos(list as any);
     })();
   }, []);
 
