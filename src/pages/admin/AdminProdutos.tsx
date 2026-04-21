@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { brl } from "@/lib/format";
-import { Plus, Pencil, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, ChevronUp, ChevronDown, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
