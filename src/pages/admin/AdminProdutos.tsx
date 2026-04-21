@@ -51,7 +51,7 @@ export default function AdminProdutos() {
   }, []);
 
   const novo = () => {
-    setEdit({ nome: "", slug: "", descricao: "", preco: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
+    setEdit({ nome: "", slug: "", descricao: "", preco: 0, lucro: 0, peso_g: 0, dimensoes: "", estoque: 0, imagem_upload: "", imagem_link: "", categoria_ids: [], ativo: true, destaque: false, cores_texto: "" });
     setOpen(true);
   };
   const abrir = (p: any) => {
