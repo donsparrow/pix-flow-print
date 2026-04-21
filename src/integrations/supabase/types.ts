@@ -307,6 +307,42 @@ export type Database = {
         }
         Relationships: []
       }
+      produto_categorias: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          id: string
+          produto_id: string
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          id?: string
+          produto_id: string
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          produto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_categorias_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produto_categorias_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
