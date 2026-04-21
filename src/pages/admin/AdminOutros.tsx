@@ -68,10 +68,24 @@ export function AdminCategorias() {
         <h1 className="font-display text-3xl font-bold">Categorias</h1>
         <p className="text-sm text-muted-foreground mt-1">A categoria <strong>Todos</strong> é padrão do sistema — todo produto pertence a ela automaticamente.</p>
       </div>
-      <div className="flex gap-2">
-        <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da nova categoria" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
-        <Button type="button" onClick={add} disabled={adicionando}><Plus className="h-4 w-4 mr-1" />{adicionando ? "Adicionando..." : "Adicionar"}</Button>
-      </div>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => { e.preventDefault(); add(); }}
+      >
+        <Input
+          type="text"
+          name="nome-categoria"
+          autoComplete="off"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          placeholder="Nome da nova categoria"
+          disabled={adicionando}
+          className="flex-1"
+        />
+        <Button type="submit" disabled={adicionando}>
+          <Plus className="h-4 w-4 mr-1" />{adicionando ? "Adicionando..." : "Adicionar"}
+        </Button>
+      </form>
       <div className="space-y-2">
         {list.map((c) => {
           const isTodos = c.slug === "todos";
