@@ -13,19 +13,21 @@ export default function Produto() {
   const [p, setP] = useState<any>(null);
   const [qty, setQty] = useState(1);
   const [cor, setCor] = useState<string | null>(null);
+  const [imgAtiva, setImgAtiva] = useState(0);
   const { add } = useCart();
 
   useEffect(() => {
     if (!slug) return;
     supabase
       .from("produtos")
-      .select("*, categorias(nome, slug)")
+      .select("*, categorias(nome, slug), produto_categorias(categorias(nome, slug))")
       .eq("slug", slug)
       .eq("ativo", true)
       .maybeSingle()
       .then(({ data }) => {
         setP(data);
         setCor(null);
+        setImgAtiva(0);
       });
   }, [slug]);
 
