@@ -180,13 +180,32 @@ export default function AdminProdutos() {
                   </Select>
                 </Field>
               </div>
-              <Field label="Imagem">
-                <div className="flex gap-2 items-center">
-                  <Input value={edit.imagem_url || ""} onChange={(e) => setEdit({ ...edit, imagem_url: e.target.value })} placeholder="URL ou faça upload" />
-                  <input type="file" accept="image/*" id="img-up" className="hidden" onChange={(e) => e.target.files && uploadImg(e.target.files[0])} />
-                  <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>Upload</Button>
+              <Field label="Imagem do produto">
+                <div className="space-y-3 border rounded-xl p-3 bg-muted/30">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase">Upload (prioridade)</span>
+                      {edit.imagem_upload && <Button type="button" variant="ghost" size="sm" onClick={removerUpload} className="h-7 text-destructive"><Trash2 className="h-3 w-3 mr-1" />Remover</Button>}
+                    </div>
+                    <div className="flex gap-2 items-center flex-wrap">
+                      <input type="file" accept="image/jpeg,image/png,image/webp" id="img-up" className="hidden" onChange={(e) => e.target.files && uploadImg(e.target.files[0])} />
+                      <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>
+                        {edit.imagem_upload ? "Substituir arquivo" : "Selecionar arquivo"}
+                      </Button>
+                      <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB</span>
+                    </div>
+                    {edit.imagem_upload && <img src={edit.imagem_upload} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview do upload" />}
+                  </div>
+
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase">URL externa {edit.imagem_upload && <span className="text-muted-foreground normal-case font-normal">(ignorada — upload tem prioridade)</span>}</span>
+                      {edit.imagem_link && <Button type="button" variant="ghost" size="sm" onClick={removerLink} className="h-7 text-destructive"><Trash2 className="h-3 w-3 mr-1" />Limpar</Button>}
+                    </div>
+                    <Input value={edit.imagem_link || ""} onChange={(e) => setEdit({ ...edit, imagem_link: e.target.value })} placeholder="https://exemplo.com/imagem.jpg" />
+                    {edit.imagem_link && !edit.imagem_upload && <img src={edit.imagem_link} loading="lazy" className="w-32 h-32 object-cover rounded-lg border" alt="Preview da URL" />}
+                  </div>
                 </div>
-                {edit.imagem_url && <img src={edit.imagem_url} className="w-32 h-32 object-cover rounded-lg mt-2" alt="" />}
               </Field>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2"><Switch checked={edit.ativo} onCheckedChange={(v) => setEdit({ ...edit, ativo: v })} />Ativo</label>
