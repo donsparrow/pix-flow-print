@@ -521,6 +521,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      pedido_existe: { Args: { _pedido_id: string }; Returns: boolean }
       registrar_comprovante: {
         Args: { _arquivo_path: string; _codigo: string }
         Returns: boolean
