@@ -24,7 +24,7 @@ export function Header() {
           <img src={logo} alt="JRTL STUDIO" className="h-14 w-14 transition-transform group-hover:scale-105" />
           <div className="hidden sm:block">
             <div className="font-display text-2xl font-bold text-gradient-brand leading-none">JRTL STUDIO</div>
-            <div className="text-xs text-muted-foreground font-semibold">Impressões personalizadas</div>
+            <div className="text-xs text-muted-foreground font-semibold">Da minha família para sua!</div>
           </div>
         </Link>
 
