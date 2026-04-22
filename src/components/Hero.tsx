@@ -39,12 +39,13 @@ export function Hero() {
 
           <h1 className="font-display text-5xl font-bold leading-[1.05] md:text-7xl">
             Produtos criativos{" "}
-            <span className="text-gradient-brand">impressoss</span> em 3D.
+            <span className="text-gradient-brand">impressos</span> em 3D.
           </h1>
 
-          <p className="text-lg text-muted-foreground max-w-md leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-md leading-relaxed whitespace-pre-line">
             Decoração, action figures, utilidades e brinquedos.
-            Nosso capricho com a tecnologia que amamos. <strong className="text-foreground">Faça sua compra sem cadastro, pedido em minutos.</strong>
+            Nosso capricho com a tecnologia que você merece.
+            <strong className="text-foreground">Faça sua compra sem cadastro, pedido em minutos.</strong>
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -106,7 +107,7 @@ export function Hero() {
           <div className="hidden md:flex absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-lg px-5 py-3 items-center gap-3 border border-border animate-float" style={{ animationDelay: "0.5s" }}>
             <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center text-2xl">✓</div>
             <div>
-              <div className="font-bold text-sm">PIX rápido</div>
+              <div className="font-bold text-sm">Compra rápida</div>
               <div className="text-xs text-muted-foreground">Pedido em 2 min</div>
             </div>
           </div>
@@ -114,7 +115,7 @@ export function Hero() {
             <div className="text-2xl">⭐</div>
             <div>
               <div className="font-bold text-sm">5.0 estrelas</div>
-              <div className="text-xs text-muted-foreground">+2 avaliações</div>
+              <div className="text-xs text-muted-foreground">+10 avaliações</div>
             </div>
           </div>
         </div>
