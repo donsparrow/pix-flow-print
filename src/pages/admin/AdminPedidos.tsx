@@ -45,9 +45,25 @@ export default function AdminPedidos() {
     if (sel?.id === id) setSel({ ...sel, status });
   };
 
+  const apagarTodos = async () => {
+    // Apaga comprovantes -> itens -> pedidos (sem afetar produtos, categorias, cupons, configs)
+    const { error: e1 } = await supabase.from("comprovantes").delete().not("id", "is", null);
+    if (e1) return toast.error("Erro ao apagar comprovantes: " + e1.message);
+    const { error: e2 } = await supabase.from("itens_pedido").delete().not("id", "is", null);
+    if (e2) return toast.error("Erro ao apagar itens: " + e2.message);
+    const { error: e3 } = await supabase.from("pedidos").delete().not("id", "is", null);
+    if (e3) return toast.error("Erro ao apagar pedidos: " + e3.message);
+    toast.success("Todos os pedidos foram apagados");
+    setSel(null);
+    carregar();
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
-      <h1 className="font-display text-3xl font-bold">Pedidos</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="font-display text-3xl font-bold">Pedidos</h1>
+        <ApagarTodosBotao total={pedidos.length} onConfirm={apagarTodos} />
+      </div>
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
