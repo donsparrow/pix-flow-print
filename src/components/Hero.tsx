@@ -37,14 +37,14 @@ export function Hero() {
             <span className="text-sm font-bold">Impressão 3D feita com carinho</span>
           </div>
 
-          <h1 className="font-display text-5xl md:text-7xl font-bold leading-[1.05]">
-            Suas ideias{" "}
-            <span className="text-gradient-brand">impressas</span> em 3D.
+          <h1 className="font-display text-5xl font-bold leading-[1.05] md:text-7xl">
+            Produtos criativos{" "}
+            <span className="text-gradient-brand">impressoss</span> em 3D.
           </h1>
 
           <p className="text-lg text-muted-foreground max-w-md leading-relaxed">
-            Decoração, action figures, utilidades e personalizados.
-            Capricho artesanal com a tecnologia que você ama. <strong className="text-foreground">Sem login, pedido em minutos.</strong>
+            Decoração, action figures, utilidades e brinquedos.
+            Nosso capricho com a tecnologia que amamos. <strong className="text-foreground">Faça sua compra sem cadastro, pedido em minutos.</strong>
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -61,8 +61,8 @@ export function Hero() {
 
           <div className="flex gap-8 pt-4">
             <Stat n="50+" label="Peças impressas" />
-            <Stat n="100%" label="Feito à mão" />
-            <Stat n="48h" label="Pronto pra retirar" />
+            <Stat n="100%" label="Criado em família" />
+            <Stat n="72h" label="Pronto pra retirar" />
           </div>
         </div>
 
@@ -114,7 +114,7 @@ export function Hero() {
             <div className="text-2xl">⭐</div>
             <div>
               <div className="font-bold text-sm">5.0 estrelas</div>
-              <div className="text-xs text-muted-foreground">+200 avaliações</div>
+              <div className="text-xs text-muted-foreground">+2 avaliações</div>
             </div>
           </div>
         </div>
