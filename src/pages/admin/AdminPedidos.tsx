@@ -215,3 +215,59 @@ function CancelarBotao({ onConfirm, codigo, compact }: { onConfirm: () => void; 
     </AlertDialog>
   );
 }
+
+function ApagarTodosBotao({ total, onConfirm }: { total: number; onConfirm: () => void | Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [confirmacao, setConfirmacao] = useState("");
+  const podeApagar = confirmacao.trim().toUpperCase() === "APAGAR";
+
+  return (
+    <AlertDialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setConfirmacao(""); }}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="text-destructive border-destructive/40 hover:bg-destructive/10"
+          disabled={total === 0}
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          Apagar todos os pedidos
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Deseja apagar todos os pedidos?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>
+                Esta ação irá remover <strong>{total}</strong> pedido(s), todos os itens e
+                comprovantes associados. <strong className="text-destructive">Essa ação não pode ser desfeita.</strong>
+              </p>
+              <p>Produtos, categorias, cupons e configurações <strong>não serão afetados</strong>.</p>
+              <p className="pt-2">Para confirmar, digite <strong>APAGAR</strong> abaixo:</p>
+              <Input
+                value={confirmacao}
+                onChange={(e) => setConfirmacao(e.target.value)}
+                placeholder="APAGAR"
+                autoFocus
+              />
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!podeApagar}
+            onClick={async (e) => {
+              if (!podeApagar) { e.preventDefault(); return; }
+              await onConfirm();
+              setConfirmacao("");
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Apagar tudo
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
