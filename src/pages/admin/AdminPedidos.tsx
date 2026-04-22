@@ -17,7 +17,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Eye, Image as ImageIcon, Ban, RotateCcw } from "lucide-react";
+import { Eye, Image as ImageIcon, Ban, RotateCcw, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -44,9 +45,25 @@ export default function AdminPedidos() {
     if (sel?.id === id) setSel({ ...sel, status });
   };
 
+  const apagarTodos = async () => {
+    // Apaga comprovantes -> itens -> pedidos (sem afetar produtos, categorias, cupons, configs)
+    const { error: e1 } = await supabase.from("comprovantes").delete().not("id", "is", null);
+    if (e1) return toast.error("Erro ao apagar comprovantes: " + e1.message);
+    const { error: e2 } = await supabase.from("itens_pedido").delete().not("id", "is", null);
+    if (e2) return toast.error("Erro ao apagar itens: " + e2.message);
+    const { error: e3 } = await supabase.from("pedidos").delete().not("id", "is", null);
+    if (e3) return toast.error("Erro ao apagar pedidos: " + e3.message);
+    toast.success("Todos os pedidos foram apagados");
+    setSel(null);
+    carregar();
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
-      <h1 className="font-display text-3xl font-bold">Pedidos</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="font-display text-3xl font-bold">Pedidos</h1>
+        <ApagarTodosBotao total={pedidos.length} onConfirm={apagarTodos} />
+      </div>
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
@@ -192,6 +209,62 @@ function CancelarBotao({ onConfirm, codigo, compact }: { onConfirm: () => void; 
           <AlertDialogCancel>Voltar</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Cancelar pedido
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function ApagarTodosBotao({ total, onConfirm }: { total: number; onConfirm: () => any }) {
+  const [open, setOpen] = useState(false);
+  const [confirmacao, setConfirmacao] = useState("");
+  const podeApagar = confirmacao.trim().toUpperCase() === "APAGAR";
+
+  return (
+    <AlertDialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setConfirmacao(""); }}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="text-destructive border-destructive/40 hover:bg-destructive/10"
+          disabled={total === 0}
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          Apagar todos os pedidos
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Deseja apagar todos os pedidos?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>
+                Esta ação irá remover <strong>{total}</strong> pedido(s), todos os itens e
+                comprovantes associados. <strong className="text-destructive">Essa ação não pode ser desfeita.</strong>
+              </p>
+              <p>Produtos, categorias, cupons e configurações <strong>não serão afetados</strong>.</p>
+              <p className="pt-2">Para confirmar, digite <strong>APAGAR</strong> abaixo:</p>
+              <Input
+                value={confirmacao}
+                onChange={(e) => setConfirmacao(e.target.value)}
+                placeholder="APAGAR"
+                autoFocus
+              />
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!podeApagar}
+            onClick={async (e) => {
+              if (!podeApagar) { e.preventDefault(); return; }
+              await onConfirm();
+              setConfirmacao("");
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Apagar tudo
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
