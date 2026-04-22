@@ -24,14 +24,11 @@ export default function PedidoDetalhe() {
 
   const carregar = async () => {
     if (!codigo) return;
-    const { data: p } = await supabase.from("pedidos").select("*").eq("codigo", codigo).maybeSingle();
-    setPedido(p);
-    if (p) {
-      const { data: i } = await supabase.from("itens_pedido").select("*").eq("pedido_id", p.id);
-      setItens(i || []);
-      const { data: c } = await supabase.from("comprovantes").select("*").eq("pedido_id", p.id).order("created_at", { ascending: false }).maybeSingle();
-      setComprovante(c);
-    }
+    const { data } = await (supabase as any).rpc("get_pedido_by_codigo", { _codigo: codigo });
+    if (!data) { setPedido(null); return; }
+    setPedido(data.pedido);
+    setItens(data.itens || []);
+    setComprovante(data.comprovante || null);
   };
 
   useEffect(() => { carregar(); }, [codigo]);
@@ -70,8 +67,10 @@ export default function PedidoDetalhe() {
     const path = `${pedido.id}/${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("comprovantes").upload(path, file);
     if (upErr) { toast.error("Erro no upload"); setUploading(false); return; }
-    const { data: { publicUrl } } = supabase.storage.from("comprovantes").getPublicUrl(path);
-    const { error } = await supabase.from("comprovantes").insert({ pedido_id: pedido.id, arquivo_url: publicUrl });
+    const { error } = await (supabase as any).rpc("registrar_comprovante", {
+      _codigo: pedido.codigo,
+      _arquivo_path: path,
+    });
     setUploading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Comprovante enviado! Vamos analisar em breve.");

@@ -17,7 +17,7 @@ export default function ConsultarPedido() {
     const c = codigo.trim().toUpperCase();
     if (!c) return;
     setLoading(true);
-    const { data } = await supabase.from("pedidos").select("codigo").eq("codigo", c).maybeSingle();
+    const { data } = await (supabase as any).rpc("get_pedido_by_codigo", { _codigo: c });
     setLoading(false);
     if (!data) { toast.error("Pedido não encontrado"); return; }
     nav(`/pedido/${c}`);

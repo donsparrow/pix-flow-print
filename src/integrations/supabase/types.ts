@@ -482,11 +482,18 @@ export type Database = {
         }[]
       }
       gerar_codigo_pedido: { Args: never; Returns: string }
+      get_comprovante_path: { Args: { _codigo: string }; Returns: string }
+      get_comprovante_signed_url: { Args: { _codigo: string }; Returns: string }
+      get_pedido_by_codigo: { Args: { _codigo: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      registrar_comprovante: {
+        Args: { _arquivo_path: string; _codigo: string }
         Returns: boolean
       }
       validar_cupom: {

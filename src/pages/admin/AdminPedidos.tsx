@@ -34,7 +34,16 @@ export default function AdminPedidos() {
     const { data: i } = await supabase.from("itens_pedido").select("*").eq("pedido_id", p.id);
     setItens(i || []);
     const { data: c } = await supabase.from("comprovantes").select("*").eq("pedido_id", p.id).order("created_at", { ascending: false }).maybeSingle();
-    setComp(c);
+    if (c?.arquivo_url) {
+      let signedUrl = c.arquivo_url;
+      if (!c.arquivo_url.startsWith("http")) {
+        const { data: signed } = await supabase.storage.from("comprovantes").createSignedUrl(c.arquivo_url, 3600);
+        signedUrl = signed?.signedUrl || c.arquivo_url;
+      }
+      setComp({ ...c, signed_url: signedUrl });
+    } else {
+      setComp(c);
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -167,8 +176,8 @@ export default function AdminPedidos() {
                 {comp ? (
                   <div>
                     <div className="font-bold mb-2 flex items-center gap-2"><ImageIcon className="h-4 w-4" />Comprovante</div>
-                    <a href={comp.arquivo_url} target="_blank" rel="noreferrer">
-                      <img src={comp.arquivo_url} alt="Comprovante" className="rounded-xl border max-h-80 mx-auto" />
+                    <a href={comp.signed_url || comp.arquivo_url} target="_blank" rel="noreferrer">
+                      <img src={comp.signed_url || comp.arquivo_url} alt="Comprovante" className="rounded-xl border max-h-80 mx-auto" />
                     </a>
                   </div>
                 ) : (
