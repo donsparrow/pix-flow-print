@@ -17,7 +17,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Eye, Image as ImageIcon, Ban, RotateCcw } from "lucide-react";
+import { Eye, Image as ImageIcon, Ban, RotateCcw, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState<any[]>([]);
