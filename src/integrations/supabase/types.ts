@@ -485,6 +485,35 @@ export type Database = {
       get_comprovante_path: { Args: { _codigo: string }; Returns: string }
       get_comprovante_signed_url: { Args: { _codigo: string }; Returns: string }
       get_pedido_by_codigo: { Args: { _codigo: string }; Returns: Json }
+      get_produtos_admin: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          categoria_id: string | null
+          cores: string[] | null
+          created_at: string
+          descricao: string | null
+          destaque: boolean
+          dimensoes: string | null
+          estoque: number
+          id: string
+          imagem_url: string | null
+          imagens_extras: Json | null
+          lucro: number
+          nome: string
+          ordem: number
+          peso_g: number | null
+          preco: number
+          slug: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "produtos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -20,7 +20,7 @@ export default function Produto() {
     if (!slug) return;
     supabase
       .from("produtos")
-      .select("*, categorias(nome, slug), produto_categorias(categorias(nome, slug))")
+      .select("id, nome, slug, descricao, preco, estoque, peso_g, dimensoes, imagem_url, imagens_extras, cores, categoria_id, ativo, destaque, ordem, created_at, updated_at, categorias(nome, slug), produto_categorias(categorias(nome, slug))")
       .eq("slug", slug)
       .eq("ativo", true)
       .maybeSingle()

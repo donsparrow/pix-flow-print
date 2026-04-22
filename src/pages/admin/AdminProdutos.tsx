@@ -37,12 +37,24 @@ export default function AdminProdutos() {
   const [open, setOpen] = useState(false);
 
   const carregar = async () => {
-    const { data } = await supabase
-      .from("produtos")
-      .select("*, produto_categorias(categoria_id, categorias(id, nome, slug))")
-      .order("ordem", { ascending: true })
-      .order("created_at", { ascending: false });
-    setList(data || []);
+    // Produtos com lucro (admin-only via RPC) + associações de categorias
+    const [{ data: prods }, { data: assocs }] = await Promise.all([
+      (supabase as any).rpc("get_produtos_admin"),
+      supabase
+        .from("produto_categorias")
+        .select("produto_id, categoria_id, categorias(id, nome, slug)"),
+    ]);
+    const byProd = new Map<string, any[]>();
+    (assocs || []).forEach((a: any) => {
+      const arr = byProd.get(a.produto_id) || [];
+      arr.push({ categoria_id: a.categoria_id, categorias: a.categorias });
+      byProd.set(a.produto_id, arr);
+    });
+    const merged = (prods || []).map((p: any) => ({
+      ...p,
+      produto_categorias: byProd.get(p.id) || [],
+    }));
+    setList(merged);
   };
 
   useEffect(() => {
