@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.criar_pedido(jsonb, jsonb, shipping_method, numeric, text);

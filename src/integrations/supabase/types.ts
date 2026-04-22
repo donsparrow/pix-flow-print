@@ -467,34 +467,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      criar_pedido:
-        | {
-            Args: {
-              _cliente: Json
-              _itens: Json
-              _metodo_frete: Database["public"]["Enums"]["shipping_method"]
-              _observacoes?: string
-              _valor_frete: number
-            }
-            Returns: {
-              codigo: string
-              pedido_id: string
-            }[]
-          }
-        | {
-            Args: {
-              _cliente: Json
-              _cupom_codigo?: string
-              _itens: Json
-              _metodo_frete: Database["public"]["Enums"]["shipping_method"]
-              _observacoes?: string
-              _valor_frete: number
-            }
-            Returns: {
-              codigo: string
-              pedido_id: string
-            }[]
-          }
+      criar_pedido: {
+        Args: {
+          _cliente: Json
+          _cupom_codigo?: string
+          _itens: Json
+          _metodo_frete: Database["public"]["Enums"]["shipping_method"]
+          _observacoes?: string
+          _valor_frete: number
+        }
+        Returns: {
+          codigo: string
+          pedido_id: string
+        }[]
+      }
       gerar_codigo_pedido: { Args: never; Returns: string }
       has_role: {
         Args: {
