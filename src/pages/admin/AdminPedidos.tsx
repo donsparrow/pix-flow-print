@@ -216,7 +216,7 @@ function CancelarBotao({ onConfirm, codigo, compact }: { onConfirm: () => void; 
   );
 }
 
-function ApagarTodosBotao({ total, onConfirm }: { total: number; onConfirm: () => void | Promise<void> }) {
+function ApagarTodosBotao({ total, onConfirm }: { total: number; onConfirm: () => any }) {
   const [open, setOpen] = useState(false);
   const [confirmacao, setConfirmacao] = useState("");
   const podeApagar = confirmacao.trim().toUpperCase() === "APAGAR";
