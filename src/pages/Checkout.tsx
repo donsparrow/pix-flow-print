@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useCart } from "@/hooks/useCart";
 import { useConfig } from "@/hooks/useConfig";
 import { useState } from "react";
-import { brl, formatCEP, formatPhone, onlyDigits } from "@/lib/format";
+import { brl, formatCEP, formatPhone } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -58,22 +58,61 @@ export default function Checkout() {
       toast.error("Carrinho vazio");
       return;
     }
+
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+
     if (metodo !== "retirada" && !form.endereco) {
       toast.error("Informe o endereço para entrega");
       return;
     }
 
-    setSubmitting(true);
     const faltaCor = items.find((i) => i.cores_disponiveis && i.cores_disponiveis.length > 0 && !i.cor_selecionada);
     if (faltaCor) {
       toast.error(`Selecione a cor para ${faltaCor.nome}`);
       return;
     }
+
+    const produtoIds = [...new Set(items.map((i) => i.produto_id))];
+    const { data: produtosAtuais, error: produtosError } = await supabase
+      .from("produtos")
+      .select("id, nome, ativo, cores")
+      .in("id", produtoIds);
+
+    if (produtosError) {
+      toast.error("Não foi possível validar os produtos do carrinho");
+      return;
+    }
+
+    const produtosMap = new Map((produtosAtuais || []).map((p) => [p.id, p]));
+
+    for (const item of items) {
+      const produto = produtosMap.get(item.produto_id);
+
+      if (!produto || !produto.ativo) {
+        toast.error(`O produto ${item.nome} não está mais disponível`);
+        return;
+      }
+
+      const coresAtuais = Array.isArray(produto.cores)
+        ? produto.cores.filter((cor): cor is string => typeof cor === "string" && cor.trim().length > 0)
+        : [];
+
+      if (coresAtuais.length > 0 && !item.cor_selecionada) {
+        toast.error(`O item ${item.nome} precisa de cor. Remova do carrinho e adicione novamente.`);
+        return;
+      }
+
+      if (item.cor_selecionada && coresAtuais.length > 0 && !coresAtuais.includes(item.cor_selecionada)) {
+        toast.error(`A cor escolhida para ${item.nome} não está mais disponível. Remova o item e adicione novamente.`);
+        return;
+      }
+    }
+
+    setSubmitting(true);
     const { data, error } = await supabase.rpc("criar_pedido", {
       _cliente: form,
       _itens: items.map((i) => ({ produto_id: i.produto_id, quantidade: i.quantidade, cor_selecionada: i.cor_selecionada || null })) as any,
@@ -85,9 +124,13 @@ export default function Checkout() {
     setSubmitting(false);
 
     if (error || !data || (Array.isArray(data) && data.length === 0)) {
-      toast.error(error?.message || "Erro ao criar pedido");
+      const mensagem = error?.message?.includes("Selecione uma cor para")
+        ? "Há um item no carrinho que precisa de cor. Remova o item e adicione novamente escolhendo a cor."
+        : error?.message || "Erro ao criar pedido";
+      toast.error(mensagem);
       return;
     }
+
     const result = Array.isArray(data) ? data[0] : data;
     clear();
     nav(`/pedido/${result.codigo}`, { state: { acabou_de_criar: true } });
@@ -113,6 +156,7 @@ export default function Checkout() {
     setCupomAplicado(null);
     setCupomInput("");
   };
+
   if (items.length === 0) {
     return (
       <Layout>
@@ -213,7 +257,6 @@ export default function Checkout() {
                 ))}
               </div>
               <div className="border-t pt-3 space-y-3 text-sm">
-                {/* Cupom */}
                 {cupomAplicado ? (
                   <div className="flex items-center justify-between gap-2 bg-success/10 border border-success/30 rounded-lg p-2">
                     <div className="flex items-center gap-2 text-success font-bold text-xs">
@@ -268,12 +311,15 @@ function Section({ title, children }: any) {
     </div>
   );
 }
+
 function Field({ label, children }: any) {
   return <div className="space-y-1.5"><Label className="text-sm font-bold">{label}</Label>{children}</div>;
 }
+
 function Row({ label, value }: any) {
   return <div className="flex justify-between"><span className="text-muted-foreground">{label}</span><span className="font-semibold">{value}</span></div>;
 }
+
 function ShipOption({ value, current, title, desc, price }: any) {
   const sel = value === current;
   return (
