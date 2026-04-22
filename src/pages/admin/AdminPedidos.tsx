@@ -37,7 +37,8 @@ export default function AdminPedidos() {
     if (c?.arquivo_url) {
       let signedUrl = c.arquivo_url;
       if (!c.arquivo_url.startsWith("http")) {
-        const { data: signed } = await supabase.storage.from("comprovantes").createSignedUrl(c.arquivo_url, 3600);
+        // 1 ano de validade — comprovantes precisam ficar sempre disponíveis para admins
+        const { data: signed } = await supabase.storage.from("comprovantes").createSignedUrl(c.arquivo_url, 60 * 60 * 24 * 365);
         signedUrl = signed?.signedUrl || c.arquivo_url;
       }
       setComp({ ...c, signed_url: signedUrl });
