@@ -81,7 +81,7 @@ export async function mp4ToGif(file: File, onProgress?: (pct: number) => void): 
     }
     onProgress?.(100);
     const base = file.name.replace(/\.[^.]+$/, "");
-    return new File([lastBytes], base + ".gif", { type: "image/gif" });
+    return new File([new Uint8Array(lastBytes)], base + ".gif", { type: "image/gif" });
   } finally {
     video.removeAttribute("src");
     video.load();
