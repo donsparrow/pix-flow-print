@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight, Play } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import { useConfig } from "@/hooks/useConfig";
 import logo from "@/assets/logo-jrtl.png";
 
@@ -13,13 +14,47 @@ function getVimeoId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+const HERO_CACHE_KEY = "jrtl_hero_v1";
+type HeroCache = { hero_video_upload?: string; hero_video_url?: string };
+function readHeroCache(): HeroCache | null {
+  try {
+    const raw = localStorage.getItem(HERO_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as HeroCache) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function Hero() {
-  const { config } = useConfig();
-  const uploadUrl = config.hero_video_upload?.trim();
-  const externalUrl = config.hero_video_url?.trim();
+  const { config, loading } = useConfig();
+  const [cache] = useState<HeroCache | null>(() => readHeroCache());
+  const [mediaReady, setMediaReady] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      localStorage.setItem(
+        HERO_CACHE_KEY,
+        JSON.stringify({ hero_video_upload: config.hero_video_upload ?? "", hero_video_url: config.hero_video_url ?? "" })
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [loading, config.hero_video_upload, config.hero_video_url]);
+
+  const source: HeroCache = loading ? cache ?? {} : config;
+  const uploadUrl = source.hero_video_upload?.trim();
+  const externalUrl = source.hero_video_url?.trim();
   const videoSrc = uploadUrl || externalUrl || "";
   const ytId = !uploadUrl && externalUrl ? getYouTubeId(externalUrl) : null;
   const vimeoId = !uploadUrl && externalUrl ? getVimeoId(externalUrl) : null;
+  const showSkeleton = loading && !cache;
+
+  useEffect(() => {
+    setMediaReady(false);
+    setMediaError(false);
+  }, [videoSrc]);
 
   return (
     <section className="relative overflow-hidden bg-gradient-hero">
@@ -69,37 +104,42 @@ export function Hero() {
 
         <div className="relative animate-scale-in">
           <div className="relative aspect-[4/5] md:aspect-square rounded-3xl overflow-hidden shadow-lg bg-card border-4 border-card">
-            {videoSrc ? (
-              ytId ? (
-                <iframe
-                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&playsinline=1&rel=0`}
-                  className="w-full h-full" allow="autoplay; encrypted-media" title="Vídeo"
-                  loading="lazy"
-                />
-              ) : vimeoId ? (
-                <iframe
-                  src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&muted=1&background=1`}
-                  className="w-full h-full" allow="autoplay" title="Vídeo"
-                  loading="lazy"
-                />
-              ) : (
-                <video
-                  src={videoSrc}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="metadata"
-                  className="w-full h-full object-cover"
-                />
-              )
+            {showSkeleton ? (
+              <div className="w-full h-full bg-muted animate-pulse" />
+            ) : videoSrc && !mediaError ? (
+              <div className="relative w-full h-full bg-muted">
+                {ytId ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&playsinline=1&rel=0`}
+                    className={`w-full h-full transition-opacity duration-500 ${mediaReady ? "opacity-100" : "opacity-0"}`}
+                    allow="autoplay; encrypted-media" title="Vídeo"
+                    onLoad={() => setMediaReady(true)}
+                  />
+                ) : vimeoId ? (
+                  <iframe
+                    src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&muted=1&background=1`}
+                    className={`w-full h-full transition-opacity duration-500 ${mediaReady ? "opacity-100" : "opacity-0"}`}
+                    allow="autoplay" title="Vídeo"
+                    onLoad={() => setMediaReady(true)}
+                  />
+                ) : (
+                  <video
+                    key={videoSrc}
+                    src={videoSrc}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    onLoadedData={() => setMediaReady(true)}
+                    onError={() => setMediaError(true)}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${mediaReady ? "opacity-100" : "opacity-0"}`}
+                  />
+                )}
+              </div>
             ) : (
               <div className="w-full h-full bg-gradient-cool flex flex-col items-center justify-center gap-6 p-8">
                 <img src={logo} alt="JRTL STUDIO" className="w-2/3 max-w-xs animate-float drop-shadow-2xl" />
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/90 backdrop-blur text-sm font-bold">
-                  <Play className="h-4 w-4 fill-primary text-primary" />
-                  Configure seu vídeo no admin
-                </div>
               </div>
             )}
           </div>
