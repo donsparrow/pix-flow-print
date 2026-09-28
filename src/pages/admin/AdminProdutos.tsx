@@ -78,11 +78,12 @@ export default function AdminProdutos() {
   };
 
   const uploadImg = async (files: FileList) => {
-    const tiposOk = ["image/jpeg", "image/png", "image/webp"];
+    const tiposOk = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     const novas: string[] = [];
     for (const f of Array.from(files)) {
-      if (!tiposOk.includes(f.type)) { toast.error(`${f.name}: use JPG, PNG ou WEBP`); continue; }
-      if (f.size > 5 * 1024 * 1024) { toast.error(`${f.name}: até 5MB`); continue; }
+      if (!tiposOk.includes(f.type)) { toast.error(`${f.name}: use JPG, PNG, WEBP ou GIF`); continue; }
+      const limite = f.type === "image/gif" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (f.size > limite) { toast.error(f.type === "image/gif" ? `${f.name}: GIF: até 10MB` : `${f.name}: até 5MB`); continue; }
       const ext = f.name.split(".").pop();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await supabase.storage.from("produtos").upload(path, f, { cacheControl: "31536000", contentType: f.type });
@@ -297,11 +298,11 @@ export default function AdminProdutos() {
               <Field label="Imagens do produto (galeria)">
                 <div className="space-y-3 border rounded-xl p-3 bg-muted/30">
                   <div className="flex gap-2 items-center flex-wrap">
-                    <input type="file" accept="image/jpeg,image/png,image/webp" id="img-up" multiple className="hidden" onChange={(e) => e.target.files && e.target.files.length > 0 && uploadImg(e.target.files)} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="img-up" multiple className="hidden" onChange={(e) => e.target.files && e.target.files.length > 0 && uploadImg(e.target.files)} />
                     <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("img-up")?.click()}>
                       <Plus className="h-3 w-3 mr-1" /> Adicionar imagens
                     </Button>
-                    <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB cada · vários arquivos</span>
+                    <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP: até 5MB · GIF: até 10MB · vários arquivos</span>
                   </div>
 
                   {(edit.imagens || []).length > 0 ? (
