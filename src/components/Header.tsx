@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
-import { ShoppingBag, Search, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { ShoppingBag, Search, Menu, X, Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import logo from "@/assets/logo-jrtl.png";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
@@ -15,13 +16,17 @@ const links = [
 
 export function Header() {
   const { count, setOpen } = useCart();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && resolvedTheme === "dark";
   const [mobile, setMobile] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-lg border-b border-border">
       <div className="container flex items-center justify-between h-20">
         <Link to="/" className="flex items-center gap-3 group">
-          <img src={logo} alt="JRTL STUDIO" className="h-14 w-14 transition-transform group-hover:scale-105" />
+          <img src={logo} alt="JRTL STUDIO" className="h-14 w-14 transition-transform group-hover:scale-105 dark:bg-white dark:rounded-2xl dark:p-1" />
           <div className="hidden sm:block">
             <div className="font-display text-2xl font-bold text-gradient-brand leading-none">JRTL STUDIO</div>
             <div className="text-xs text-muted-foreground font-semibold">Da minha família para sua!</div>
@@ -48,6 +53,9 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Alternar tema claro/escuro" onClick={() => setTheme(isDark ? "light" : "dark")}>
+            {mounted ? (isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />) : <span className="h-5 w-5" />}
+          </Button>
           <Button
             variant="ghost"
             size="icon"
