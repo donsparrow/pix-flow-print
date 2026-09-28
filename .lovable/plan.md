@@ -25,7 +25,11 @@ As regras de upload do bucket exigem apenas "ser admin" — nenhuma checagem de 
 
 - Atributo `accept` passa a incluir `image/gif`, para que a janela de seleção do sistema permita escolher GIF.
 
-### 3. Nada mais
+### 3. Texto de ajuda ao lado do botão de upload
+
+- Passa a citar GIF e os limites corretos: JPG/PNG/WEBP até 5MB, GIF até 10MB.
+
+### 4. Nada mais
 
 Ordenação, "definir capa", mover/remover imagens, campo de link externo, previews, salvamento e todo o resto do arquivo ficam exatamente como estão. Nenhuma outra tela é tocada.
 
@@ -62,6 +66,14 @@ Depois:
 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="img-up" multiple ... />
 ```
 
-## Item marcado e NÃO alterado
+Hoje (texto de ajuda):
 
-Existe uma linha de ajuda ao lado do botão que hoje diz `JPG, PNG ou WEBP · até 5MB cada · vários arquivos`. Ela continuaria desatualizada, mas **não será alterada** neste plano — se quiser que ela também cite GIF e os 10 MB, é só dizer.
+```text
+<span className="text-xs text-muted-foreground">JPG, PNG ou WEBP · até 5MB cada · vários arquivos</span>
+```
+
+Depois:
+
+```text
+<span className="text-xs text-muted-foreground">JPG, PNG ou WEBP: até 5MB · GIF: até 10MB · vários arquivos</span>
+```
