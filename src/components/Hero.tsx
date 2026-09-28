@@ -139,7 +139,7 @@ export function Hero() {
               </div>
             ) : (
               <div className="w-full h-full bg-gradient-cool flex flex-col items-center justify-center gap-6 p-8">
-                <img src={logo} alt="JRTL STUDIO" className="w-2/3 max-w-xs animate-float drop-shadow-2xl" />
+                <img src={logo} alt="JRTL STUDIO" className="w-2/3 max-w-xs animate-float drop-shadow-2xl dark:bg-white dark:rounded-2xl dark:p-1" />
               </div>
             )}
           </div>
